@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>SafeTrack — Personal Safety</title>
+  <meta name="description" content="SafeTrack: Share your location with trusted contacts, trigger silent SOS alerts, and stay safe with BLE tracker tag support." />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Leaflet map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Socket.IO client -->
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!--  AUTH SCREENS                                        -->
+<!-- ════════════════════════════════════════════════════ -->
+<div id="auth-screen" class="screen active">
+  <div class="auth-bg">
+    <div class="auth-orb orb-1"></div>
+    <div class="auth-orb orb-2"></div>
+    <div class="auth-orb orb-3"></div>
+  </div>
+  <div class="auth-card glass">
+    <div class="auth-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="url(#lg1)" stroke-width="2.5"/><path d="M20 10 C20 10 12 15 12 22 C12 27 15.5 30 20 30 C24.5 30 28 27 28 22 C28 15 20 10 20 10Z" fill="url(#lg2)"/><circle cx="20" cy="21" r="4" fill="white" fill-opacity="0.9"/><defs><linearGradient id="lg1" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient><linearGradient id="lg2" x1="12" y1="10" x2="28" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1" stop-opacity="0.85"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs></svg>
+      </div>
+      <div>
+        <h1 class="logo-name">SafeTrack</h1>
+        <p class="logo-tagline">Stay safe. Stay connected.</p>
+      </div>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="auth-tabs" role="tablist">
+      <button class="auth-tab active" id="tab-login" role="tab" aria-selected="true" onclick="showAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="tab-register" role="tab" aria-selected="false" onclick="showAuthTab('register')">Create Account</button>
+    </div>
+
+    <!-- Login Form -->
+    <form id="form-login" class="auth-form" onsubmit="handleLogin(event)">
+      <div class="field-group">
+        <label for="login-id">Username or Phone</label>
+        <input id="login-id" type="text" autocomplete="username" placeholder="Enter username or phone" required aria-label="Username or phone number" />
+      </div>
+      <div class="field-group">
+        <label for="login-pass">Password</label>
+        <input id="login-pass" type="password" autocomplete="current-password" placeholder="Enter password" required aria-label="Password" />
+      </div>
+      <div id="login-error" class="form-error" aria-live="polite"></div>
+      <button type="submit" class="btn-primary" id="btn-login">Sign In</button>
+    </form>
+
+    <!-- Register Form -->
+    <form id="form-register" class="auth-form hidden" onsubmit="handleRegister(event)">
+      <div class="field-group">
+        <label for="reg-name">Display Name</label>
+        <input id="reg-name" type="text" autocomplete="name" placeholder="Your name" required aria-label="Display name" />
+      </div>
+      <div class="field-group">
+        <label for="reg-username">Username</label>
+        <input id="reg-username" type="text" autocomplete="username" placeholder="Username (no spaces)" required aria-label="Username" />
+      </div>
+      <div class="field-group">
+        <label for="reg-phone">Phone Number</label>
+        <input id="reg-phone" type="tel" autocomplete="tel" placeholder="+1234567890" required aria-label="Phone number" />
+      </div>
+      <div class="field-group">
+        <label for="reg-pass">Password</label>
+        <input id="reg-pass" type="password" autocomplete="new-password" placeholder="Create a password" required aria-label="Password" />
+      </div>
+      <div id="reg-error" class="form-error" aria-live="polite"></div>
+      <button type="submit" class="btn-primary" id="btn-register">Create Account</button>
+    </form>
+
+    <div style="margin-top: 16px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+      <button type="button" class="btn-ghost" onclick="startDemoMode()" style="width: 100%;">Try Interactive Demo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!--  MAIN APP                                           -->
+<!-- ════════════════════════════════════════════════════ -->
+<div id="app-screen" class="screen hidden">
+
+  <!-- ── Top bar ────────────────────────────────────── -->
+  <header class="topbar glass" role="banner">
+    <div class="topbar-left">
+      <div class="app-logo-mini">
+        <svg viewBox="0 0 28 28" width="28" height="28" fill="none"><circle cx="14" cy="14" r="13" stroke="url(#tl1)" stroke-width="2"/><path d="M14 6 C14 6 8 10 8 15.5 C8 19 10.7 22 14 22 C17.3 22 20 19 20 15.5 C20 10 14 6 14 6Z" fill="url(#tl2)"/><circle cx="14" cy="15" r="3" fill="white" fill-opacity="0.9"/><defs><linearGradient id="tl1" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient><linearGradient id="tl2" x1="8" y1="6" x2="20" y2="22" gradientUnits="userSpaceOnUse"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs></svg>
+      </div>
+      <span class="app-name-mini">SafeTrack</span>
+    </div>
+    <div class="topbar-center">
+      <div id="connectivity-badge" class="badge badge-online" aria-live="polite">
+        <span class="badge-dot"></span>
+        <span class="badge-label">Online</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="avatar-btn" id="btn-profile" onclick="openPanel('settings')" aria-label="Open settings">
+        <div class="avatar-circle" id="nav-avatar">?</div>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── SOS Button (persistent, always visible) ────── -->
+  <div id="sos-zone" class="sos-zone" aria-label="SOS Emergency Button">
+    <button id="btn-sos" class="btn-sos" onclick="triggerSOS()" aria-label="Trigger SOS emergency alert" title="Hold 2 seconds to activate SOS">
+      <span class="sos-ring sos-ring-1"></span>
+      <span class="sos-ring sos-ring-2"></span>
+      <span class="sos-icon">SOS</span>
+    </button>
+    <div id="sos-mode-label" class="sos-mode-label">Silent Alert</div>
+  </div>
+
+  <!-- ── Main content areas ─────────────────────────── -->
+  <main class="main-content" role="main">
+
+    <!-- MAP PANEL -->
+    <section id="panel-map" class="panel active" aria-label="Map view">
+      <div id="map" class="map-container" aria-label="Live location map"></div>
+      <div class="map-overlays">
+        <!-- Location sharing toggle -->
+        <div class="map-card glass" id="sharing-card">
+          <div class="sharing-row">
+            <div>
+              <div class="sharing-label">Location Sharing</div>
+              <div class="sharing-sub" id="sharing-sub">Sharing with 0 contacts</div>
+            </div>
+            <label class="toggle" aria-label="Toggle location sharing">
+              <input type="checkbox" id="toggle-sharing" onchange="toggleSharing(this.checked)" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        <!-- Contact location list -->
+        <div class="contact-location-list" id="contact-location-list" aria-label="Contact locations"></div>
+      </div>
+    </section>
+
+    <!-- CONTACTS PANEL -->
+    <section id="panel-contacts" class="panel hidden" aria-label="Contacts">
+      <div class="panel-header">
+        <h2>Contacts</h2>
+        <button class="btn-icon" onclick="openAddContact()" aria-label="Add new contact">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+
+      <!-- Search -->
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="search" id="contact-search-input" placeholder="Search to add by username or phone" oninput="searchUsers(this.value)" aria-label="Search users to add" />
+      </div>
+      <div id="user-search-results" class="search-results" aria-live="polite"></div>
+
+      <!-- Pending requests -->
+      <div id="pending-section" class="section-block hidden">
+        <h3 class="section-title">Pending</h3>
+        <div id="pending-list" class="contact-list"></div>
+      </div>
+
+      <!-- Contacts list -->
+      <h3 class="section-title">My Contacts</h3>
+      <div id="contacts-list" class="contact-list" aria-live="polite">
+        <div class="empty-state">No contacts yet. Search above to add someone.</div>
+      </div>
+
+      <!-- Groups -->
+      <div class="groups-section">
+        <div class="section-row">
+          <h3 class="section-title">Groups</h3>
+          <button class="btn-text" onclick="openCreateGroup()" aria-label="Create new group">+ New Group</button>
+        </div>
+        <div id="groups-list" class="groups-list"></div>
+      </div>
+    </section>
+
+    <!-- TRACKERS PANEL -->
+    <section id="panel-trackers" class="panel hidden" aria-label="Tracker tags">
+      <div class="panel-header">
+        <h2>Tracker Tags</h2>
+        <button class="btn-icon" onclick="openAddTracker()" aria-label="Pair new tracker tag">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div class="ble-info-banner">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11M17.5 6.5L12 12l5.5 5.5M6.5 6.5L12 12 6.5 17.5"/></svg>
+        <span>Pair any standard BLE beacon — no proprietary network required</span>
+      </div>
+      <div id="trackers-list" class="trackers-list" aria-live="polite">
+        <div class="empty-state">No tracker tags paired yet.</div>
+      </div>
+    </section>
+
+    <!-- ALERTS PANEL -->
+    <section id="panel-alerts" class="panel hidden" aria-label="SOS alerts">
+      <div class="panel-header">
+        <h2>Alerts</h2>
+      </div>
+      <div class="alerts-tabs">
+        <button class="alert-tab active" onclick="switchAlertTab('outbound', this)" aria-selected="true">My SOS Events</button>
+        <button class="alert-tab" onclick="switchAlertTab('inbox', this)" aria-selected="false">SOS Inbox</button>
+      </div>
+      <div id="alerts-outbound" class="alerts-list"></div>
+      <div id="alerts-inbox" class="alerts-list hidden"></div>
+    </section>
+
+    <!-- SETTINGS PANEL -->
+    <section id="panel-settings" class="panel hidden" aria-label="Settings">
+      <div class="panel-header">
+        <h2>Settings</h2>
+      </div>
+
+      <!-- Profile -->
+      <div class="settings-card glass">
+        <h3 class="settings-section-title">Profile</h3>
+        <div class="profile-row">
+          <div class="profile-avatar-lg" id="settings-avatar">?</div>
+          <div>
+            <div class="profile-name" id="settings-displayname">—</div>
+            <div class="profile-username" id="settings-username">@—</div>
+            <div class="profile-phone" id="settings-phone">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="settings-card glass">
+        <h3 class="settings-section-title">Location & Ping Frequency</h3>
+        <div class="settings-row">
+          <label>Ping Mode</label>
+          <select id="setting-ping-mode" onchange="updateSetting('pingMode', this.value)" aria-label="Select ping frequency preset">
+            <option value="HIGH">High (every 30s)</option>
+            <option value="MEDIUM" selected>Medium (every 5min)</option>
+            <option value="LOW">Low (every 15min)</option>
+            <option value="CUSTOM">Custom</option>
+          </select>
+        </div>
+        <div class="settings-row" id="custom-interval-row" style="display:none">
+          <label>Custom interval (seconds)</label>
+          <input type="number" id="setting-custom-interval" min="10" max="3600" placeholder="e.g. 120" onchange="updateSetting('customPingIntervalSec', parseInt(this.value))" aria-label="Custom ping interval in seconds" />
+        </div>
+        <div class="settings-row">
+          <label>Adaptive Pinging
+            <span class="hint">Increases frequency when moving</span>
+          </label>
+          <label class="toggle" aria-label="Toggle adaptive pinging">
+            <input type="checkbox" id="setting-adaptive" onchange="updateSetting('adaptivePingEnabled', this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <label>Effective interval</label>
+          <span id="effective-interval" class="settings-value">—</span>
+        </div>
+        <div class="ping-battery-indicator" id="ping-battery-indicator"></div>
+      </div>
+
+      <!-- Data Retention -->
+      <div class="settings-card glass">
+        <h3 class="settings-section-title">Privacy & Data Retention</h3>
+        <div class="settings-row">
+          <label>History Retention
+            <span class="hint">Days to keep your location trail</span>
+          </label>
+          <input type="number" id="setting-retention" min="1" max="365" placeholder="30" onchange="updateSetting('retentionDays', parseInt(this.value))" aria-label="Location history retention in days" />
+        </div>
+        <div class="settings-row retention-note">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Your <strong>last known location</strong> is always retained regardless of this setting — it powers the lost-device failsafe.</span>
+        </div>
+        <div class="settings-row">
+          <label>Who can see my location</label>
+        </div>
+        <div id="watchers-list" class="watchers-list" aria-live="polite">Loading…</div>
+      </div>
+
+      <!-- SOS Settings -->
+      <div class="settings-card glass">
+        <h3 class="settings-section-title">SOS Configuration</h3>
+        <div class="settings-row">
+          <label>SOS Mode</label>
+          <select id="setting-sos-mode" onchange="updateSetting('sosMode', this.value)" aria-label="SOS trigger mode">
+            <option value="SILENT_ALERT">Silent Alert (no sound/screen)</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <label>Default SOS Group</label>
+          <select id="setting-sos-group" onchange="updateSetting('sosGroupId', this.value || null)" aria-label="Default group to notify on SOS">
+            <option value="">All contacts</option>
+          </select>
+        </div>
+        <div class="settings-row sos-hint">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Silent Alert sends no sound or visible notification on your device. Contacts receive a push alert with your location.</span>
+        </div>
+      </div>
+
+      <button class="btn-danger" onclick="logout()" aria-label="Sign out of SafeTrack">Sign Out</button>
+    </section>
+
+  </main>
+
+  <!-- ── Bottom nav ─────────────────────────────────── -->
+  <nav class="bottom-nav glass" role="navigation" aria-label="Main navigation">
+    <button class="nav-btn active" id="nav-map" onclick="goToPanel('map', this)" aria-label="Map" aria-selected="true">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      <span>Map</span>
+    </button>
+    <button class="nav-btn" id="nav-contacts" onclick="goToPanel('contacts', this)" aria-label="Contacts" aria-selected="false">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <span>Contacts</span>
+      <span id="pending-badge" class="nav-badge hidden">0</span>
+    </button>
+    <button class="nav-btn" id="nav-trackers" onclick="goToPanel('trackers', this)" aria-label="Trackers" aria-selected="false">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49M7.76 16.24a6 6 0 010-8.49M20.07 3.93a10 10 0 010 14.14M3.93 20.07a10 10 0 010-14.14"/></svg>
+      <span>Trackers</span>
+    </button>
+    <button class="nav-btn" id="nav-alerts" onclick="goToPanel('alerts', this)" aria-label="Alerts" aria-selected="false">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <span>Alerts</span>
+      <span id="alert-badge" class="nav-badge hidden">0</span>
+    </button>
+  </nav>
+
+</div><!-- /#app-screen -->
+
+<!-- ════════════════════════════════════════════════════ -->
+<!--  MODALS                                             -->
+<!-- ════════════════════════════════════════════════════ -->
+
+<!-- SOS Confirmation Modal -->
+<div id="modal-sos-confirm" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="sos-confirm-title">
+  <div class="modal glass sos-modal">
+    <div class="sos-modal-icon">🚨</div>
+    <h2 id="sos-confirm-title">Trigger SOS Alert?</h2>
+    <p>A <strong>silent alert</strong> will be sent to your trusted contacts with your location. No sound or visible alert will appear on your screen.</p>
+    <div class="modal-location-preview" id="sos-location-preview">Getting your location…</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('modal-sos-confirm')">Cancel</button>
+      <button class="btn-danger btn-sos-confirm" id="btn-sos-fire" onclick="fireSOS()">Send Alert</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Contact / Search Modal -->
+<div id="modal-add-contact" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="add-contact-title">
+  <div class="modal glass">
+    <h2 id="add-contact-title">Add Contact</h2>
+    <p class="modal-sub">Search by username or phone number. They must accept your request before you can share locations.</p>
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" id="modal-search-input" placeholder="Username or phone" oninput="modalSearchUsers(this.value)" aria-label="Search for user to add" />
+    </div>
+    <div id="modal-search-results" class="search-results modal-search-results" aria-live="polite"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('modal-add-contact')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Tracker Modal -->
+<div id="modal-add-tracker" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="add-tracker-title">
+  <div class="modal glass">
+    <h2 id="add-tracker-title">Pair Tracker Tag</h2>
+    <p class="modal-sub">Enter the BLE UUID or scan the tag. This supports any standard BLE beacon — no proprietary network.</p>
+    <div class="field-group">
+      <label for="tracker-label">Tag Label</label>
+      <input id="tracker-label" type="text" placeholder="e.g. My Backpack, Car Keys" aria-label="Tracker tag label" required />
+    </div>
+    <div class="field-group">
+      <label for="tracker-uuid">BLE UUID / MAC Address</label>
+      <input id="tracker-uuid" type="text" placeholder="e.g. E2C56DB5-DFFB-48D2-B060-D0F5A71096E0" aria-label="BLE UUID or MAC address" required />
+    </div>
+    <div id="tracker-pair-error" class="form-error" aria-live="polite"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('modal-add-tracker')">Cancel</button>
+      <button class="btn-primary" onclick="pairTracker()" id="btn-pair-tracker">Pair Tag</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Group Modal -->
+<div id="modal-create-group" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="create-group-title">
+  <div class="modal glass">
+    <h2 id="create-group-title">Create Group</h2>
+    <div class="field-group">
+      <label for="group-name">Group Name</label>
+      <input id="group-name" type="text" placeholder="e.g. Family, SOS Circle" aria-label="Group name" required />
+    </div>
+    <div class="field-group">
+      <label>Select Members</label>
+      <div id="group-member-select" class="member-select" aria-label="Select group members"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('modal-create-group')">Cancel</button>
+      <button class="btn-primary" onclick="createGroup()">Create Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- Remote Ping Modal -->
+<div id="modal-remote-ping" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ping-title">
+  <div class="modal glass">
+    <h2 id="ping-title">Remote Ping</h2>
+    <p class="modal-sub">This will send a silent high-priority notification to the device, requesting an immediate location report.</p>
+    <div id="ping-target-name" class="ping-target-name">—</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('modal-remote-ping')">Cancel</button>
+      <button class="btn-primary" id="btn-send-ping" onclick="sendRemotePing()">Send Ping</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notifications -->
+<div id="toast-container" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/map.js"></script>
+<script src="/js/contacts.js"></script>
+<script src="/js/trackers.js"></script>
+<script src="/js/sos.js"></script>
+<script src="/js/settings.js"></script>
+</body>
+</html>
