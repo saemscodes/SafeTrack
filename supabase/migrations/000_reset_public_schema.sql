@@ -5,6 +5,7 @@
 -- This is SAFE to run on a fresh Supabase project with no real data.
 -- It only touches the `public` schema — Supabase system schemas are untouched.
 
+
 -- ─── Step 1: Drop all public tables in dependency order ──────────────────────
 DROP TABLE IF EXISTS public.seed_phrase_recovery CASCADE;
 DROP TABLE IF EXISTS public.nostr_challenges CASCADE;
