@@ -136,8 +136,14 @@
     },
     {
       target: null,
-      title: 'Leaves No Trace',
-      text: 'The app never saves passwords or locations to your phone. The moment you close it, memory is totally wiped. Stay safe!',
+      title: 'Zero Exposure',
+      text: 'If your phone is confiscated, it shows nothing. The moment you close the app or hit Panic Logout, all local - not cloud - data is destroyed. An attacker searching your phone will only find a blank calendar.',
+      position: 'center'
+    },
+    {
+      target: null,
+      title: '100% Persistent',
+      text: 'But your data is never lost. All your emergency contacts and locations are securely locked in the Cloud, whose access is tied to your secure login credentials. The second you enter your PIN again, everything instantly beams back to your device.',
       position: 'center'
     }
   ];
