@@ -20,18 +20,11 @@ window.AppState = {
 };
 
 // ── Boot ─────────────────────────────────────────────
+// Boot is managed by index.html DOMContentLoaded handler.
+// showApp() is called once auth succeeds via the Calendar search bar.
 document.addEventListener('DOMContentLoaded', () => {
-  const user = API.getUser();
-  const token = API.getToken();
-  if (user && token) {
-    AppState.user = user;
-    showApp();
-  } else {
-    showAuthTab('login');
-  }
-
-  // Connectivity monitoring
-  window.addEventListener('online', () => updateConnectivity(true));
+  // Connectivity monitoring (always active)
+  window.addEventListener('online',  () => updateConnectivity(true));
   window.addEventListener('offline', () => updateConnectivity(false));
 });
 
@@ -98,16 +91,32 @@ function logout() {
   if (AppState.pingIntervalId) clearInterval(AppState.pingIntervalId);
   API.clearTokens();
   AppState.user = null;
+  AppState.isDemoMode = false;
+  AppState.contacts = [];
+  AppState.groups = [];
+
+  // Return to Calendar decoy screen (not the old auth screen)
   document.getElementById('app-screen').classList.remove('active');
   document.getElementById('app-screen').classList.add('hidden');
-  document.getElementById('auth-screen').classList.add('active');
-  document.getElementById('auth-screen').classList.remove('hidden');
+  const calScreen = document.getElementById('calendar-screen');
+  if (calScreen) {
+    calScreen.classList.remove('hidden', 'transitioning-out');
+    calScreen.classList.add('active');
+    // Re-init calendar view
+    if (typeof CalendarApp !== 'undefined') CalendarApp.init();
+  }
 }
 
 // ── Show App ─────────────────────────────────────────
 function showApp() {
-  document.getElementById('auth-screen').classList.remove('active');
-  document.getElementById('auth-screen').classList.add('hidden');
+  const calScreen = document.getElementById('calendar-screen');
+  if (calScreen) {
+    calScreen.classList.remove('active');
+    calScreen.classList.add('hidden');
+  }
+  // Also hide old auth screen if somehow still visible
+  const authScreen = document.getElementById('auth-screen');
+  if (authScreen) { authScreen.classList.remove('active'); authScreen.classList.add('hidden'); }
   document.getElementById('app-screen').classList.remove('hidden');
   document.getElementById('app-screen').classList.add('active');
 

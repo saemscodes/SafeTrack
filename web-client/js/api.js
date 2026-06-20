@@ -4,7 +4,11 @@
  */
 
 const API = (() => {
-  const BASE = '/api/v1';
+  // Use Supabase REST if configured, otherwise fall back to local Node backend
+  const SUPABASE_URL = window.SUPABASE_URL || '';
+  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || '';
+  const USE_SUPABASE = !!SUPABASE_URL;
+  const BASE = USE_SUPABASE ? `${SUPABASE_URL}/rest/v1` : '/api/v1';
 
   function getToken() { return localStorage.getItem('st_access_token'); }
   function getRefresh() { return localStorage.getItem('st_refresh_token'); }
@@ -41,6 +45,8 @@ const API = (() => {
     const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    // Supabase requires apikey header with anon key
+    if (USE_SUPABASE && SUPABASE_ANON_KEY) headers['apikey'] = SUPABASE_ANON_KEY;
 
     const resp = await fetch(`${BASE}${path}`, { ...options, headers });
 

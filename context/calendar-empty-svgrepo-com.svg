@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="style=fill">
+<g id="calendar-empty">
+<path id="Subtract" fill-rule="evenodd" clip-rule="evenodd" d="M1.25 16.7484L1.25 18C1.25 20.6234 3.37665 22.75 6 22.75L18 22.75C20.6234 22.75 22.75 20.6234 22.75 18L22.75 16.7484C22.7327 16.7495 22.7153 16.75 22.6977 16.75L1.30233 16.75C1.28475 16.75 1.2673 16.7495 1.25 16.7484ZM22.75 15.2516L22.75 8C22.75 5.37665 20.6234 3.25 18 3.25L6 3.25C3.37665 3.25 1.25 5.37665 1.25 8L1.25 15.2516C1.2673 15.2505 1.28475 15.25 1.30233 15.25L22.6977 15.25C22.7153 15.25 22.7327 15.2505 22.75 15.2516Z" fill="#000000"/>
+<path id="line (Stroke)" fill-rule="evenodd" clip-rule="evenodd" d="M8 1.25C8.41421 1.25 8.75 1.58579 8.75 2V5.5C8.75 5.91421 8.41421 6.25 8 6.25C7.58579 6.25 7.25 5.91421 7.25 5.5V2C7.25 1.58579 7.58579 1.25 8 1.25Z" fill="#000000"/>
+<path id="line (Stroke)_2" fill-rule="evenodd" clip-rule="evenodd" d="M16 1.25C16.4142 1.25 16.75 1.58579 16.75 2V5.5C16.75 5.91421 16.4142 6.25 16 6.25C15.5858 6.25 15.25 5.91421 15.25 5.5V2C15.25 1.58579 15.5858 1.25 16 1.25Z" fill="#000000"/>
+</g>
+</g>
+</svg>
