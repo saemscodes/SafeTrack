@@ -131,7 +131,10 @@ const AuthRouter = (() => {
     // Request challenge from server
     const challengeResp = await fetch(
       `${EDGE_NOSTR}?action=challenge&npub=${encodeURIComponent(npub)}`,
-      { headers: { 'X-Device-FP': getDeviceFP() } }
+      { 
+        method: 'POST',
+        headers: { 'X-Device-FP': getDeviceFP() } 
+      }
     );
     const challengeData = await challengeResp.json();
     if (challengeData.type !== 'nostr_challenge') {
