@@ -119,13 +119,13 @@
     {
       target: '.cal-search-input',
       title: 'The Hidden Lock',
-      text: 'To anyone looking, this is just a normal calendar app. But the search bar is actually a hidden lock. Type your secret PIN here to enter the real safety app.',
+      text: 'To anyone looking, this is just a normal calendar app. But the search bar is actually a hidden access point to sign in. Type your secret PIN there to enter the actual app.',
       position: 'bottom'
     },
     {
       target: '.cal-add-btn',
       title: 'A Working Calendar',
-      text: 'You can add and save real calendar events. This makes the app look totally normal if someone checks your phone.',
+      text: 'You can add and save real calendar events. This makes the app look totally normal if someone is peeking onto your phone.',
       position: 'bottom'
     },
     {
@@ -153,41 +153,41 @@
 
     bubble = document.createElement('div');
     bubble.className = 'st-tour-bubble';
-    
+
     arrow = document.createElement('div');
     arrow.className = 'st-tour-arrow';
-    
+
     titleEl = document.createElement('h3');
     titleEl.className = 'st-tour-title';
-    
+
     textEl = document.createElement('p');
     textEl.className = 'st-tour-text';
-    
+
     const footer = document.createElement('div');
     footer.className = 'st-tour-footer';
-    
+
     progressEl = document.createElement('div');
     progressEl.className = 'st-tour-progress';
-    
+
     const btnGroup = document.createElement('div');
-    
+
     skipBtn = document.createElement('button');
     skipBtn.className = 'st-tour-btn st-tour-btn-outline';
     skipBtn.textContent = 'Skip';
     skipBtn.style.marginRight = '12px';
     skipBtn.onclick = endTour;
-    
+
     nextBtn = document.createElement('button');
     nextBtn.className = 'st-tour-btn';
     nextBtn.textContent = 'Next';
     nextBtn.onclick = nextStep;
-    
+
     btnGroup.appendChild(skipBtn);
     btnGroup.appendChild(nextBtn);
-    
+
     footer.appendChild(progressEl);
     footer.appendChild(btnGroup);
-    
+
     bubble.appendChild(arrow);
     bubble.appendChild(titleEl);
     bubble.appendChild(textEl);
@@ -200,7 +200,7 @@
       endTour();
       return;
     }
-    
+
     const step = steps[index];
 
     titleEl.textContent = step.title;
@@ -219,13 +219,13 @@
     if (targetEl) {
       targetEl.classList.add('st-tour-highlight');
       const rect = targetEl.getBoundingClientRect();
-      
+
       const bubbleWidth = 320;
       const margin = 16;
-      
+
       // Calculate safest left position (so it never goes offscreen)
       let calcLeft = rect.left + (rect.width / 2) - (bubbleWidth / 2);
-      
+
       // Clamp horizontally
       if (calcLeft < margin) {
         calcLeft = margin;
@@ -234,7 +234,7 @@
       }
 
       bubble.style.left = `${calcLeft}px`;
-      
+
       // Calculate Arrow position relative to the bubble
       // center of target element relative to the screen:
       const targetCenter = rect.left + (rect.width / 2);
@@ -288,8 +288,8 @@
     if (overlay) overlay.style.opacity = '0';
     if (bubble) bubble.classList.remove('visible');
     setTimeout(() => {
-        if (overlay) document.body.removeChild(overlay);
-        if (bubble) document.body.removeChild(bubble);
+      if (overlay) document.body.removeChild(overlay);
+      if (bubble) document.body.removeChild(bubble);
     }, 350);
   }
 
@@ -297,7 +297,7 @@
     setTimeout(() => {
       initDOM();
       showStep(0);
-    }, 1500); 
+    }, 1500);
   });
 
 })();
