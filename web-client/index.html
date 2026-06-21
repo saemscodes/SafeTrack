@@ -6,8 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SafeTrack" />
   <title>Calendar</title>
   <meta name="description" content="Calendar — Stay organised, plan your days beautifully." />
   <link rel="manifest" href="/manifest.json" />
@@ -30,6 +31,8 @@
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNib3lteGFyaHNxcWtvZG5oeGprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MDQ1MTcsImV4cCI6MjA5NzQ4MDUxN30.hnctLOGeNjIu2ZmUrSZVCp3dds1833Vxo8SpB3cprsg';
     window.API_BASE_URL = 'https://calendar-safetrack.vercel.app/api/v1';
   </script>
+  <!-- SafeTrack Icons & UI Assets -->
+  <script src="/js/icons.js" defer></script>
   <!-- SafeTrack Realtime — subscribes to live location, SOS, and ping channels -->
   <script src="/js/realtime.js" defer></script>
   <!-- Guided Tour (ONLY runs if URL contains ?demo=1) -->
@@ -399,6 +402,22 @@
               </label>
             </div>
           </div>
+
+          <!-- Triage Pill (Grouped Notifications) -->
+          <div id="triage-pill" class="triage-pill glass hidden">
+            <div class="triage-segment routine" data-count="0">
+              <span class="triage-shape circle"></span>
+              <span class="triage-value">0</span>
+            </div>
+            <div class="triage-segment warning" data-count="0">
+              <span class="triage-shape triangle"></span>
+              <span class="triage-value">0</span>
+            </div>
+            <div class="triage-segment critical" data-count="0">
+              <span class="triage-shape square"></span>
+              <span class="triage-value">0</span>
+            </div>
+          </div>
           <div class="contact-location-list" id="contact-location-list" aria-label="Contact locations"></div>
         </div>
       </section>
@@ -576,41 +595,17 @@
 
     <!-- ── Bottom nav ──────────────────────────────────────── -->
     <nav class="bottom-nav glass" role="navigation" aria-label="Main navigation">
-      <button class="nav-btn active" id="nav-map" onclick="goToPanel('map', this)" aria-label="Map"
-        aria-selected="true">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-          <line x1="8" y1="2" x2="8" y2="18" />
-          <line x1="16" y1="6" x2="16" y2="22" />
-        </svg>
+      <button class="nav-btn active" id="nav-map" onclick="goToPanel('map', this)" aria-label="Map" aria-selected="true" data-icon="map">
         <span>Map</span>
       </button>
-      <button class="nav-btn" id="nav-contacts" onclick="goToPanel('contacts', this)" aria-label="Contacts"
-        aria-selected="false">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M23 21v-2a4 4 0 00-3-3.87" />
-          <path d="M16 3.13a4 4 0 010 7.75" />
-        </svg>
+      <button class="nav-btn" id="nav-contacts" onclick="goToPanel('contacts', this)" aria-label="Contacts" aria-selected="false" data-icon="contacts">
         <span>Contacts</span>
         <span id="pending-badge" class="nav-badge hidden">0</span>
       </button>
-      <button class="nav-btn" id="nav-trackers" onclick="goToPanel('trackers', this)" aria-label="Trackers"
-        aria-selected="false">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="2" />
-          <path
-            d="M16.24 7.76a6 6 0 010 8.49M7.76 16.24a6 6 0 010-8.49M20.07 3.93a10 10 0 010 14.14M3.93 20.07a10 10 0 010-14.14" />
-        </svg>
+      <button class="nav-btn" id="nav-trackers" onclick="goToPanel('trackers', this)" aria-label="Trackers" aria-selected="false" data-icon="trackers">
         <span>Trackers</span>
       </button>
-      <button class="nav-btn" id="nav-alerts" onclick="goToPanel('alerts', this)" aria-label="Alerts"
-        aria-selected="false">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-          <path d="M13.73 21a2 2 0 01-3.46 0" />
-        </svg>
+      <button class="nav-btn" id="nav-alerts" onclick="goToPanel('alerts', this)" aria-label="Alerts" aria-selected="false" data-icon="alerts">
         <span>Alerts</span>
         <span id="alert-badge" class="nav-badge hidden">0</span>
       </button>
@@ -728,6 +723,8 @@
   <script src="/js/trackers.js"></script>
   <script src="/js/sos.js"></script>
   <script src="/js/settings.js"></script>
+  <script src="/js/dock.js"></script>
+  <script src="/js/icons.js"></script>
 
   <script>
     // ── Calendar screen global handlers ─────────────────────────
@@ -1125,6 +1122,11 @@
 
     // ── Boot ─────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
+      // Register Service Worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(console.error);
+      }
+
       // Check for existing session
       const existingToken = localStorage.getItem('st_access_token');
       const existingUser = localStorage.getItem('st_user');

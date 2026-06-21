@@ -129,8 +129,8 @@ function showApp() {
   document.getElementById('settings-username').textContent = `@${u.username}`;
   document.getElementById('settings-phone').textContent = u.phone;
 
-  // Init socket
-  initSocket();
+  // Init realtime
+  initRealtime();
 
   // Load everything
   loadContacts();
@@ -142,11 +142,27 @@ function showApp() {
   // Start geolocation
   startLocationWatch();
 
+  // Init icons
+  if (window.IconResolver) window.IconResolver.renderAll();
+
   // Init map (in map.js)
   initMap();
 
   // Default panel
   goToPanel('map', document.getElementById('nav-map'));
+  
+  // Bind entire sharing card as tappable toggle
+  const sharingCard = document.getElementById('sharing-card');
+  const sharingToggle = document.getElementById('toggle-sharing');
+  if (sharingCard && sharingToggle) {
+    sharingCard.onclick = () => {
+      sharingToggle.checked = !sharingToggle.checked;
+      toggleSharing(sharingToggle.checked);
+    };
+    // Sync initial class
+    sharingCard.classList.toggle('active-state', sharingToggle.checked);
+    sharingCard.classList.toggle('paused-state', !sharingToggle.checked);
+  }
 }
 
 // ── Panel Navigation ─────────────────────────────────
@@ -190,11 +206,10 @@ function updateConnectivity(online) {
   }
 }
 
-// ── Socket.IO ─────────────────────────────────────────
-function initSocket() {
+// ── Supabase Realtime ──────────────────────────────────
+function initRealtime() {
   if (AppState.isDemoMode) {
-    console.log('[Demo Mode] Socket connection skipped.');
-    AppState.socket = { emit: () => {}, disconnect: () => {}, on: () => {} };
+    console.log('[Demo Mode] Realtime skipped.');
     // Simulate some demo locations after map load
     setTimeout(() => {
       if (navigator.geolocation) {
@@ -204,80 +219,101 @@ function initSocket() {
           const ts = Date.now();
           const d1 = { userId: 'c1', lat: lat + 0.005, lng: lng + 0.005, accuracy: 20, timestamp: ts };
           const d2 = { userId: 'c2', lat: lat - 0.003, lng: lng - 0.004, accuracy: 15, timestamp: ts - 60000 };
-          AppMap.updateContactPin(d1); updateContactLocationList(d1);
-          AppMap.updateContactPin(d2); updateContactLocationList(d2);
+          if (window.AppMap) {
+             AppMap.updateContactPin(d1); updateContactLocationList(d1);
+             AppMap.updateContactPin(d2); updateContactLocationList(d2);
+          }
         });
       }
     }, 2500);
     return;
   }
 
-  const socket = window.io({
-    auth: { token: API.getToken() },
-    reconnection: true,
-    reconnectionDelay: 2000,
-  });
+  const token = API.getToken();
+  const userId = AppState.user?.id;
+  if (!token || !userId) return;
 
-  socket.on('connect', () => {
-    console.log('[Socket] Connected:', socket.id);
-    socket.emit('presence:online');
-    // Subscribe to all contact locations
-    AppState.contacts
-      .filter(c => c.status === 'ACCEPTED')
-      .forEach(c => socket.emit('subscribe:location', { targetUserId: c.contact.id }));
-  });
+  RealtimeManager.connect(userId, token);
 
-  socket.on('location:update', (data) => {
-    AppMap.updateContactPin(data);
+  // Listen for custom events dispatched by RealtimeManager
+  window.addEventListener('st:location:update', (e) => {
+    const data = e.detail;
+    if (window.AppMap) AppMap.updateContactPin(data);
     updateContactLocationList(data);
   });
 
-  socket.on('sos:alert', (data) => {
-    showToast(`🚨 SOS from ${data.triggeredById}! Tap Alerts to respond.`, 'sos', 10000);
+  const _processedSOSIds = new Set();
+  window.addEventListener('st:sos:alert', (e) => {
+    const data = e.detail;
+    
+    // 1. Replay Protection: Dedupe ID
+    if (_processedSOSIds.has(data.id)) return;
+    _processedSOSIds.add(data.id);
+    
+    // 2. Replay Protection: TTL (5 mins) / 300s
+    const eventTimeSec = data.created_at || (new Date(data.timestamp || Date.now()).getTime() / 1000);
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (eventTimeSec < nowSec - 300) {
+      console.warn(`[Replay Protection] Dropped stale SOS payload: ${data.id}`);
+      return;
+    }
+
+    showToast(`🚨 SOS from ${data.triggeredByDisplayName || 'contact'}! Tap Alerts to respond.`, 'sos', 10000);
     const badge = document.getElementById('alert-badge');
     badge.classList.remove('hidden');
     badge.textContent = parseInt(badge.textContent || '0') + 1;
     loadAlerts(); // reload inbox
+    const newCount = parseInt(badge.textContent || '0');
+    updateTriagePill('critical', 1);
+    
+    // Specifically update the new internal Bell SVG badge
+    if (window.IconResolver) {
+       IconResolver.updateAlertBadge(newCount);
+    }
   });
 
-  socket.on('sos:ack', (data) => {
-    showToast(`✅ ${data.status === 'ON_MY_WAY' ? '🏃 On my way!' : '👁 Seen'} — someone acknowledged your SOS`, 'success', 5000);
+  window.addEventListener('st:sos:ack', (e) => {
+    const data = e.detail;
+    showToast(`✅ SOS acknowledged — ${data.status === 'ON_MY_WAY' ? 'Help is coming!' : 'Seen'}`, 'success', 5000);
     loadAlerts();
   });
 
-  socket.on('contact:request', () => {
+  window.addEventListener('st:contact:request', () => {
     showToast('👤 New contact request!', 'info');
     loadContacts();
   });
 
-  socket.on('contact:accepted', () => {
+  window.addEventListener('st:contact:accepted', () => {
     showToast('✅ Contact request accepted!', 'success');
     loadContacts();
   });
 
-  socket.on('contact:revoked', () => {
-    showToast('⚠️ A contact has disconnected from you', 'warn');
+  window.addEventListener('st:contact:revoked', () => {
+    showToast('⚠️ A contact has disconnected', 'warn');
     loadContacts();
   });
+}
 
-  socket.on('ping:forced', async ({ pingId, fromUserId }) => {
-    // Respond immediately with current location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
-        await API.post('/location/update', {
-          lat, lng, accuracy,
-          source: 'REMOTE_PING_FORCED',
-          pingMechanism: 'MANUAL'
-        }).catch(console.error);
-      });
-    }
-  });
+function updateTriagePill(category, delta) {
+  const segment = document.querySelector(`.triage-segment.${category}`);
+  if (!segment) return;
+  const pill = document.getElementById('triage-pill');
+  const valueEl = segment.querySelector('.triage-value');
+  let count = parseInt(segment.getAttribute('data-count') || '0') + delta;
+  if (count < 0) count = 0;
+  
+  segment.setAttribute('data-count', count);
+  valueEl.textContent = count;
+  
+  // Show/Hide pill based on total count
+  const total = Array.from(document.querySelectorAll('.triage-segment'))
+    .reduce((acc, s) => acc + parseInt(s.getAttribute('data-count') || '0'), 0);
+  
+  if (total > 0) pill.classList.add('active');
+  else pill.classList.remove('active');
 
-  socket.on('disconnect', () => console.log('[Socket] Disconnected'));
-  socket.on('connect_error', (err) => console.warn('[Socket] Error:', err.message));
-
-  AppState.socket = socket;
+  // Sync the bell icon badge in the nav bar
+  IconResolver.updateAlertBadge(total);
 }
 
 // ── Location Watching ─────────────────────────────────
@@ -351,7 +387,6 @@ function showToast(msg, type = 'info', duration = 3000) {
   }, duration);
 }
 
-// ── Live contact location list ────────────────────────
 const _contactLocations = {};
 
 function updateContactLocationList(data) {
@@ -413,6 +448,11 @@ function getRelativeTime(date) {
 
 function toggleSharing(enabled) {
   API.put('/settings', { locationSharingEnabled: enabled }).catch(console.error);
+  const sharingCard = document.getElementById('sharing-card');
+  if (sharingCard) {
+    sharingCard.classList.toggle('active-state', enabled);
+    sharingCard.classList.toggle('paused-state', !enabled);
+  }
   document.getElementById('sharing-sub').textContent = enabled
     ? `Sharing with ${AppState.contacts.filter(c=>c.status==='ACCEPTED').length} contacts`
     : 'Sharing paused';

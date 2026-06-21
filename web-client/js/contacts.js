@@ -15,8 +15,10 @@ async function loadContacts() {
     // Update nav badge
     const badge = document.getElementById('pending-badge');
     const inboundPending = pending.filter(c => !c.isInitiator);
-    badge.textContent = inboundPending.length;
-    badge.classList.toggle('hidden', inboundPending.length === 0);
+    if (badge) {
+      badge.textContent = inboundPending.length;
+      badge.classList.toggle('hidden', inboundPending.length === 0);
+    }
 
     // Render contacts list
     const list = document.getElementById('contacts-list');
@@ -37,13 +39,23 @@ async function loadContacts() {
     }
 
     // Sharing sub-label
-    document.getElementById('sharing-sub').textContent = `Sharing with ${accepted.length} contact${accepted.length !== 1 ? 's' : ''}`;
+    const sharingSub = document.getElementById('sharing-sub');
+    if (sharingSub) {
+      sharingSub.textContent = `Sharing with ${accepted.length} contact${accepted.length !== 1 ? 's' : ''}`;
+    }
 
     // Update settings SOS group selector
     updateSosGroupSelector();
 
     // Load groups
     loadGroups();
+
+    // ─── Realtime Subscriptions ──────────────────────────────────────────
+    if (!AppState.isDemoMode && window.RealtimeManager) {
+      accepted.forEach(c => {
+        if (c.contact?.id) RealtimeManager.watchContact(c.contact.id);
+      });
+    }
   } catch (err) {
     console.error('Load contacts failed:', err);
   }
@@ -54,7 +66,7 @@ function renderContactItem(c) {
   const init = name[0].toUpperCase();
   return `
     <div class="contact-item" id="contact-item-${c.linkId}">
-      <div class="contact-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">${init}</div>
+      <div class="contact-avatar" style="background:linear-gradient(135deg,var(--clr-violet),var(--clr-indigo))">${init}</div>
       <div class="contact-info">
         <div class="contact-name">${escHtml(name)}</div>
         <div class="contact-username">@${escHtml(c.contact.username)}</div>

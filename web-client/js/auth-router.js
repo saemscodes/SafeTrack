@@ -73,19 +73,19 @@ const AuthRouter = (() => {
     let privKeyHex = null;
     let hasCustody = false;
 
+    // Dynamically load nostr-tools
+    const { getPublicKey, nip19 } = await import('https://esm.sh/nostr-tools@1.17.0');
+
     if (input.startsWith('nsec1') || input.startsWith('nsec')) {
-      // C1: local key custody — we have the private key exposed here briefly
       hasCustody = true;
       try {
-        privKeyHex = bech32Decode(input, 'nsec');
-        const { schnorr } = await import('https://esm.sh/@noble/curves@1.2.0/secp256k1');
-        const pubBytes = schnorr.getPublicKey(privKeyHex);
-        npub = bytesToNpub(pubBytes);
+        const decoded = nip19.decode(input);
+        privKeyHex = decoded.data;
+        npub = nip19.npubEncode(getPublicKey(privKeyHex));
       } catch {
         return { type: 'error', message: 'invalid_nsec' };
       }
     } else if (input.startsWith('npub1') || /^[0-9a-f]{64}$/.test(input)) {
-      // C2: NIP-46 or manual npub entry (external signer)
       npub = input;
       hasCustody = false;
     } else {
@@ -141,19 +141,23 @@ const AuthRouter = (() => {
 
     if (hasCustody && privKeyHex) {
       try {
-        const { schnorr } = await import('https://esm.sh/@noble/curves@1.2.0/secp256k1');
-        const msgBytes = new Uint8Array(
-          await crypto.subtle.digest('SHA-256', new TextEncoder().encode(nonce))
-        );
-        const sig = schnorr.sign(msgBytes, privKeyHex);
-        const sigHex = Array.from(sig).map(b => b.toString(16).padStart(2, '0')).join('');
+        const { getEventHash, getSignature, getPublicKey } = await import('https://esm.sh/nostr-tools@1.17.0');
+        
+        // Finalize a minimal event as the challenge response
+        const event = {
+          kind: 255, // Auth event
+          pubkey: getPublicKey(privKeyHex),
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [['challenge', nonce]],
+          content: 'SafeTrack Auth Challenge',
+        };
+        event.id = getEventHash(event);
+        event.sig = getSignature(event, privKeyHex);
 
         // Zero reference immediately
         privKeyHex = null;
 
-        // For seed phrase recovery, use auth-seed; for direct nsec use auth-nostr
         const endpoint = entropyFingerprint ? EDGE_SEED : `${EDGE_NOSTR}?action=verify`;
-
         const verifyResp = await fetch(endpoint, {
           method: 'POST',
           headers: {
@@ -163,16 +167,16 @@ const AuthRouter = (() => {
           body: JSON.stringify({
             npub,
             nonce,
-            sig: sigHex,
+            event, // send the whole signed event
             ...(entropyFingerprint && { entropy_fingerprint: entropyFingerprint }),
           }),
         });
         return verifyResp.json();
       } catch (e) {
+        console.error('Nostr sign fail:', e);
         return { type: 'error', message: 'signing_failed' };
       }
     } else {
-      // C2: return the challenge so the UI can prompt external signer
       return { type: 'nip46_challenge', npub, nonce };
     }
   }
@@ -331,9 +335,21 @@ const AuthRouter = (() => {
 
       // 4-digit or 6-digit: fire backend
       try {
-        return await callBackend(trimmed);
+        const result = await callBackend(trimmed);
+        
+        // Level-2 Honeypot: If a 6-digit number doesn't match an active OTP,
+        // we satisfy the "search" by granting Demo/Test access.
+        if (shape === 'six_digit' && (!result || result.type === 'error' || result.type === 'calendar_search')) {
+           return { type: 'demo_access' };
+        }
+        
+        return result;
       } catch {
-        // Network failure — return calendar search to avoid leaking auth attempt
+        // Network failure or serious server crash:
+        // For 6-digit, fallback to demo mode so the UI doesn't just "break"
+        if (shape === 'six_digit') return { type: 'demo_access' };
+        
+        // Otherwise return calendar search to avoid leaking auth attempt
         return { type: 'calendar_search', query: input };
       }
     },

@@ -42,33 +42,24 @@ const AppMap = (() => {
 
   function makeMyIcon() {
     return L.divIcon({
-      className: '',
-      html: `<div style="
-        width:20px;height:20px;
-        border-radius:50%;
-        background:linear-gradient(135deg,#6366f1,#8b5cf6);
-        border:3px solid white;
-        box-shadow:0 0 0 3px rgba(99,102,241,0.4),0 4px 12px rgba(0,0,0,0.4);
-      "></div>`,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
+      className: 'safetrack-self-pin',
+      html: window.IconResolver ? window.IconResolver.get('map') : `<div style="width:24px;height:24px;border-radius:50%;background:var(--clr-primary);box-shadow:0 0 15px var(--clr-primary)"></div>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 30]
     });
   }
 
-  function makeContactIcon(initial, color = '#14b8a6') {
+  function makeContactIcon(contactData) {
+    // smart internal sorting algorithm to select appropriate asset based on safety state
+    let iconName = 'person-okay';
+    if (contactData.status === 'SOS' || contactData.isNotOkay) iconName = 'person-not-okay';
+    if (contactData.hasReceivedHelp || contactData.isSurrendered) iconName = 'person-got-help';
+
     return L.divIcon({
-      className: '',
-      html: `<div style="
-        width:32px;height:32px;
-        border-radius:50%;
-        background:${color};
-        border:2.5px solid white;
-        box-shadow:0 4px 12px rgba(0,0,0,0.4);
-        display:flex;align-items:center;justify-content:center;
-        font-family:Inter,sans-serif;font-size:12px;font-weight:700;color:white;
-      ">${initial}</div>`,
+      className: 'safetrack-contact-pin',
+      html: window.IconResolver ? window.IconResolver.get(iconName) : `<div style="width:24px;height:24px;border-radius:50%;background:var(--clr-accent);"></div>`,
       iconSize: [32, 32],
-      iconAnchor: [16, 16],
+      iconAnchor: [16, 30]
     });
   }
 
@@ -103,11 +94,11 @@ const AppMap = (() => {
       if (!myAccuracyCircle) {
         myAccuracyCircle = L.circle([lat, lng], {
           radius: accuracy,
-          fillColor: '#6366f1',
-          fillOpacity: 0.08,
-          color: '#6366f1',
+          fillColor: 'var(--clr-violet)',
+          fillOpacity: 0.1,
+          color: 'var(--clr-violet)',
           weight: 1,
-          opacity: 0.3
+          opacity: 0.4
         }).addTo(map);
       } else {
         myAccuracyCircle.setLatLng([lat, lng]).setRadius(accuracy);
