@@ -98,7 +98,7 @@ async function handleFourDigit(pin: string, deviceFp: string): Promise<Response>
     return calendarSearchFallback(pin); // silently deny during lockout
   }
 
-  const match = await bcrypt.compare(pin, row.pin_hash);
+  const match = bcrypt.compareSync(pin, row.pin_hash);
 
   if (!match) {
     const newCount = (row.attempt_count ?? 0) + 1;
@@ -134,7 +134,7 @@ async function handleSixDigit(code: string, deviceFp: string): Promise<Response>
 
   if (!error && otps && otps.length > 0) {
     for (const otp of otps) {
-      const match = await bcrypt.compare(code, otp.otp_hash);
+      const match = bcrypt.compareSync(code, otp.otp_hash);
       if (match) {
         // Mark used
         await supabase.from('pending_otps').update({ used: true }).eq('id', otp.id);

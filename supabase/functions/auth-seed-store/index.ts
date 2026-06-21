@@ -83,7 +83,7 @@ serve(async (req) => {
 
   // ── Bcrypt-hash the phrase server-side ───────────────────
   // Cost factor 12 — appropriate for recovery phrase (used infrequently)
-  const phraseHash = await bcrypt.hash(phrase_joined.toLowerCase().trim(), 12);
+  const phraseHash = bcrypt.hashSync(phrase_joined.toLowerCase().trim(), 12);
 
   // ── Upsert into seed_phrase_recovery ─────────────────────
   const { error } = await supabase
