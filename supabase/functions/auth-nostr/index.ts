@@ -11,7 +11,7 @@ import { create, getNumericDate } from 'https://deno.land/x/djwt@v2.8/mod.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const JWT_SECRET = Deno.env.get('SUPABASE_JWT_SECRET')!;
+const JWT_SECRET = Deno.env.get('SAFE_TRACK_JWT_SECRET')!;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
