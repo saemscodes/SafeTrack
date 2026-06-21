@@ -771,6 +771,7 @@ body::before {
   width: 52px; 
   height: 32px; 
   flex-shrink: 0; 
+  margin-left: auto;
 }
 .toggle input { opacity: 0; width: 0; height: 0; }
 .toggle-slider {
@@ -1218,6 +1219,14 @@ body::before {
 /* ══════════════════════════════════════════════════════
    SETTINGS PANEL
    ══════════════════════════════════════════════════════ */
+#panel-settings {
+  padding-bottom: 140px;
+}
+.settings-container {
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
 .settings-card {
   margin: 0 20px 12px;
   padding: 18px 20px;

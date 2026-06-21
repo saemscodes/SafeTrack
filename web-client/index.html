@@ -32,6 +32,8 @@
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNib3lteGFyaHNxcWtvZG5oeGprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MDQ1MTcsImV4cCI6MjA5NzQ4MDUxN30.hnctLOGeNjIu2ZmUrSZVCp3dds1833Vxo8SpB3cprsg';
     window.API_BASE_URL = 'https://calendar-safetrack.vercel.app/api/v1';
   </script>
+  <!-- SafeTrack Avatar Engine — Local deterministic identity generation -->
+  <script src="/js/avatar-engine.js" defer></script>
   <!-- SafeTrack Icons & UI Assets -->
   <script src="/js/icons.js" defer></script>
   <!-- SafeTrack Realtime — subscribes to live location, SOS, and ping channels -->
@@ -361,10 +363,7 @@
           style="background:linear-gradient(135deg,#02B9FC,#0090D9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">SafeTrack</span>
       </div>
       <div class="topbar-center">
-        <div id="connectivity-badge" class="badge badge-online" aria-live="polite">
-          <span class="badge-dot"></span>
-          <span class="badge-label">Online</span>
-        </div>
+        <!-- Connectivity managed silently via AppState -->
       </div>
       <div class="topbar-right">
         <button class="avatar-btn" id="btn-profile" onclick="openPanel('settings')" aria-label="Open settings">
@@ -501,17 +500,19 @@
         <div class="panel-header">
           <h2>Settings</h2>
         </div>
-        <div class="settings-card glass">
-          <h3 class="settings-section-title">Profile</h3>
-          <div class="profile-row">
-            <div class="profile-avatar-lg" id="settings-avatar">?</div>
-            <div>
-              <div class="profile-name" id="settings-displayname">—</div>
-              <div class="profile-username" id="settings-username">@—</div>
-              <div class="profile-phone" id="settings-phone">—</div>
+        <div class="settings-container">
+          <div class="settings-card glass">
+            <h3 class="settings-section-title">Profile</h3>
+            <div class="profile-row">
+              <div class="profile-avatar-lg" id="settings-avatar">?</div>
+              <div>
+                <div class="profile-name" id="settings-displayname">—</div>
+                <div class="profile-username" id="settings-username">@—</div>
+                <div class="profile-phone" id="settings-phone">—</div>
+              </div>
             </div>
           </div>
-        </div>
+
         <div class="settings-card glass">
           <h3 class="settings-section-title">Location &amp; Ping Frequency</h3>
           <div class="settings-row">
@@ -589,7 +590,8 @@
               your location.</span>
           </div>
         </div>
-        <button class="btn-danger" onclick="logout()" aria-label="Sign out of SafeTrack">Sign Out</button>
+        </div> <!-- End settings-container -->
+        <button class="btn-danger" style="margin: 0 20px 40px; width: calc(100% - 40px)" onclick="logout()" aria-label="Sign out of SafeTrack">Sign Out</button>
       </section>
 
     </main>

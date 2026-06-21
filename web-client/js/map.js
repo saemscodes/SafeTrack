@@ -50,7 +50,7 @@ const AppMap = (() => {
 
     return L.divIcon({
       className: 'safetrack-self-pin',
-      html: window.IconResolver ? window.IconResolver.get(iconName) : `<div style="width:24px;height:24px;border-radius:50%;background:var(--clr-primary);"></div>`,
+      html: window.IconResolver ? window.IconResolver.get(iconName) : `<div style="width:24px;height:24px;border-radius:50%;background:#02B9FC;border:2px solid white"></div>`,
       iconSize: [32, 32],
       iconAnchor: [16, 30]
     });
@@ -63,7 +63,7 @@ const AppMap = (() => {
 
     return L.divIcon({
       className: 'safetrack-contact-pin',
-      html: window.IconResolver ? window.IconResolver.get(iconName) : `<div style="width:24px;height:24px;border-radius:50%;background:var(--clr-accent);"></div>`,
+      html: window.IconResolver ? window.IconResolver.get(iconName) : `<div style="width:24px;height:24px;border-radius:50%;background:#7C3AED;border:2px solid white"></div>`,
       iconSize: [32, 32],
       iconAnchor: [16, 30]
     });

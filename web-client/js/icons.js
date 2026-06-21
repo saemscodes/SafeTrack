@@ -74,12 +74,15 @@ window.IconResolver = {
   },
 
   /**
-   * Generates a deterministic Boring Avatar URL from a seed string.
-   * Uses brand pallet: [0B0C10, 02B9FC, 7C3AED, F59E0B, EF4444]
+   * Generates a deterministic Boring Avatar SVG from a seed string.
+   * Calls the local AvatarEngine to prevent external network leakage.
    */
   getAvatar(seed) {
-    const colors = "0B0C10,02B9FC,7C3AED,F59E0B,EF4444";
-    return `https://source.boringavatars.com/beam/120/${encodeURIComponent(seed)}?colors=${colors}`;
+    if (window.AvatarEngine) {
+      const svg = AvatarEngine.generateSVG(seed);
+      return `data:image/svg+xml;base64,${btoa(svg)}`;
+    }
+    return `data:image/svg+xml;base64,${btoa('<svg viewBox="0 0 36 36" fill="black" xmlns="http://www.w3.org/2000/svg"><rect width="36" height="36" fill="#120F17"/></svg>')}`;
   }
 };
 
