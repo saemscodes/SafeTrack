@@ -57,16 +57,18 @@ async function loadContacts() {
       });
     }
   } catch (err) {
-    console.error('Load contacts failed:', err);
+    // Silent fail
   }
 }
 
 function renderContactItem(c) {
   const name = c.contact.displayName || c.contact.username;
-  const init = name[0].toUpperCase();
+  const avatar = IconResolver.getAvatar(c.contact.username || c.contact.id);
   return `
     <div class="contact-item" id="contact-item-${c.linkId}">
-      <div class="contact-avatar" style="background:linear-gradient(135deg,var(--clr-violet),var(--clr-indigo))">${init}</div>
+      <div class="contact-avatar">
+        <img src="${avatar}" alt="" style="width:100%;height:100%;border-radius:50%">
+      </div>
       <div class="contact-info">
         <div class="contact-name">${escHtml(name)}</div>
         <div class="contact-username">@${escHtml(c.contact.username)}</div>
@@ -80,11 +82,13 @@ function renderContactItem(c) {
 
 function renderPendingItem(c) {
   const name = c.contact.displayName || c.contact.username;
-  const init = name[0].toUpperCase();
+  const avatar = IconResolver.getAvatar(c.contact.username || c.contact.id);
   const isInbound = !c.isInitiator;
   return `
     <div class="contact-item">
-      <div class="contact-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706)">${init}</div>
+      <div class="contact-avatar">
+        <img src="${avatar}" alt="" style="width:100%;height:100%;border-radius:50%;filter:grayscale(0.6)">
+      </div>
       <div class="contact-info">
         <div class="contact-name">${escHtml(name)}</div>
         <div class="contact-username">${isInbound ? 'Wants to connect' : 'Request sent'}</div>
@@ -149,10 +153,13 @@ async function _doSearch(q, targetId) {
     }
     container.innerHTML = users.map(u => {
       const name = u.displayName || u.username;
+      const avatar = IconResolver.getAvatar(u.username || u.id);
       const alreadyLinked = AppState.contacts.some(c => c.contact.id === u.id);
       return `
         <div class="search-result-item">
-          <div class="result-avatar">${name[0].toUpperCase()}</div>
+          <div class="result-avatar">
+            <img src="${avatar}" alt="" style="width:100%;height:100%;border-radius:50%">
+          </div>
           <div class="result-info">
             <div class="result-name">${escHtml(name)}</div>
             <div class="result-sub">@${escHtml(u.username)}</div>
@@ -164,7 +171,7 @@ async function _doSearch(q, targetId) {
       `;
     }).join('');
   } catch (err) {
-    console.error('Search error:', err);
+    // Silent fail
   }
 }
 
@@ -207,7 +214,7 @@ async function loadGroups() {
     `).join('');
     updateSosGroupSelector();
   } catch (err) {
-    console.error('Load groups error:', err);
+    // Silent fail
   }
 }
 
@@ -220,10 +227,13 @@ function openCreateGroup() {
   } else {
     memberSelect.innerHTML = acceptedContacts.map(c => {
       const name = c.contact.displayName || c.contact.username;
+      const avatar = IconResolver.getAvatar(c.contact.username || c.contact.id);
       return `
         <div class="member-select-item" onclick="toggleMember(this,'${c.contact.id}')" data-id="${c.contact.id}" data-selected="false">
-          <div class="result-avatar" style="width:32px;height:32px;font-size:12px">${name[0].toUpperCase()}</div>
-          <span style="font-size:14px;flex:1">${escHtml(name)}</span>
+          <div class="result-avatar" style="width:32px;height:32px">
+            <img src="${avatar}" alt="" style="width:100%;height:100%;border-radius:50%">
+          </div>
+          <span style="font-size:14px;flex:1;margin-left:8px">${escHtml(name)}</span>
           <div class="member-checkmark">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
           </div>

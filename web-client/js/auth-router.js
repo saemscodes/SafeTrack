@@ -173,7 +173,6 @@ const AuthRouter = (() => {
         });
         return verifyResp.json();
       } catch (e) {
-        console.error('Nostr sign fail:', e);
         return { type: 'error', message: 'signing_failed' };
       }
     } else {

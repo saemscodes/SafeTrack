@@ -41,16 +41,22 @@ const AppMap = (() => {
   }
 
   function makeMyIcon() {
+    let iconName = 'person-okay';
+    // Sync with global AppState if it exists
+    if (window.AppState) {
+      if (AppState.sosStatus === 'ACTIVE' || AppState.isNotOkay) iconName = 'person-not-okay';
+      if (AppState.hasReceivedHelp || AppState.isSurrendered) iconName = 'person-got-help';
+    }
+
     return L.divIcon({
       className: 'safetrack-self-pin',
-      html: window.IconResolver ? window.IconResolver.get('map') : `<div style="width:24px;height:24px;border-radius:50%;background:var(--clr-primary);box-shadow:0 0 15px var(--clr-primary)"></div>`,
+      html: window.IconResolver ? window.IconResolver.get(iconName) : `<div style="width:24px;height:24px;border-radius:50%;background:var(--clr-primary);"></div>`,
       iconSize: [32, 32],
       iconAnchor: [16, 30]
     });
   }
 
   function makeContactIcon(contactData) {
-    // smart internal sorting algorithm to select appropriate asset based on safety state
     let iconName = 'person-okay';
     if (contactData.status === 'SOS' || contactData.isNotOkay) iconName = 'person-not-okay';
     if (contactData.hasReceivedHelp || contactData.isSurrendered) iconName = 'person-got-help';
@@ -108,20 +114,20 @@ const AppMap = (() => {
 
   function updateContactPin(data) {
     if (!map) return;
-    const { userId, lat, lng, accuracy } = data;
+    const { userId, lat, lng } = data;
     const contact = window.AppState?.contacts?.find(c => c.contact?.id === userId)?.contact;
     const name = contact?.displayName || contact?.username || userId.slice(0, 6);
-    const initial = name[0].toUpperCase();
 
     if (!contactMarkers[userId]) {
       const marker = L.marker([lat, lng], {
-        icon: makeContactIcon(initial),
+        icon: makeContactIcon(data),
         zIndexOffset: 500
       }).addTo(map);
       marker.bindPopup(`<strong>${name}</strong><br>${new Date().toLocaleTimeString()}`);
       contactMarkers[userId] = marker;
     } else {
       contactMarkers[userId].setLatLng([lat, lng]);
+      contactMarkers[userId].setIcon(makeContactIcon(data));
       contactMarkers[userId].getPopup()?.setContent(`<strong>${name}</strong><br>${new Date().toLocaleTimeString()}`);
     }
   }

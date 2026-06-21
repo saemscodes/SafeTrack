@@ -765,29 +765,34 @@ body::before {
 }
 
 /* Toggle */
-.toggle { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+.toggle { 
+  position: relative; 
+  display: inline-block; 
+  width: 52px; 
+  height: 32px; 
+  flex-shrink: 0; 
+}
 .toggle input { opacity: 0; width: 0; height: 0; }
 .toggle-slider {
   position: absolute;
-  inset: 0;
-  background: rgba(255,255,255,0.12);
-  border-radius: var(--radius-full);
   cursor: pointer;
-  transition: var(--transition);
-  border: 1px solid var(--glass-border);
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: .4s;
+  border-radius: 34px;
 }
 .toggle-slider::before {
   content: '';
   position: absolute;
-  width: 20px; height: 20px;
-  left: 2px; top: 2px;
+  width: 24px; height: 24px;
+  left: 4px; top: 4px;
   background: #fff;
   border-radius: 50%;
   transition: var(--transition);
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 .toggle input:checked + .toggle-slider { background: linear-gradient(135deg, var(--clr-primary), var(--clr-accent)); border-color: transparent; }
-.toggle input:checked + .toggle-slider::before { transform: translateX(22px); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
 
 .contact-location-list {
   display: flex;
@@ -1250,6 +1255,7 @@ body::before {
 }
 .settings-row select,
 .settings-row input[type="number"] {
+  appearance: none;
   background: rgba(255,255,255,0.07);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
@@ -1259,6 +1265,16 @@ body::before {
   font-size: 14px;
   outline: none;
   min-width: 140px;
+}
+.settings-row select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23A1A1AA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 4 3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+.settings-row select option {
+  background: #120F17;
+  color: #fff;
 }
 .settings-value { font-size: 14px; font-weight: 600; color: var(--clr-accent); }
 
@@ -1301,10 +1317,12 @@ body::before {
 .profile-avatar-lg {
   width: 56px; height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--clr-primary), var(--clr-accent));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
+  border: 2px solid var(--glass-border);
+}
+.profile-avatar-lg img {
+  width: 100%; height: 100%; object-fit: cover;
 }
 .profile-name { font-size: 17px; font-weight: 700; }
 .profile-username { font-size: 13px; color: var(--clr-primary); font-weight: 500; }

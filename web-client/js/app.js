@@ -122,9 +122,16 @@ function showApp() {
 
   // Populate profile UI
   const u = AppState.user;
-  const initials = (u.displayName || u.username || '?')[0].toUpperCase();
-  document.getElementById('nav-avatar').textContent = initials;
-  document.getElementById('settings-avatar').textContent = initials;
+  const avatarUrl = IconResolver.getAvatar(u.username || u.id);
+  
+  const navAvatar = document.getElementById('nav-avatar');
+  navAvatar.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%">`;
+  navAvatar.style.background = 'none';
+
+  const setAvatar = document.getElementById('settings-avatar');
+  setAvatar.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%">`;
+  setAvatar.style.background = 'none';
+
   document.getElementById('settings-displayname').textContent = u.displayName || u.username;
   document.getElementById('settings-username').textContent = `@${u.username}`;
   document.getElementById('settings-phone').textContent = u.phone;
@@ -209,7 +216,6 @@ function updateConnectivity(online) {
 // ── Supabase Realtime ──────────────────────────────────
 function initRealtime() {
   if (AppState.isDemoMode) {
-    console.log('[Demo Mode] Realtime skipped.');
     // Simulate some demo locations after map load
     setTimeout(() => {
       if (navigator.geolocation) {
@@ -253,10 +259,7 @@ function initRealtime() {
     // 2. Replay Protection: TTL (5 mins) / 300s
     const eventTimeSec = data.created_at || (new Date(data.timestamp || Date.now()).getTime() / 1000);
     const nowSec = Math.floor(Date.now() / 1000);
-    if (eventTimeSec < nowSec - 300) {
-      console.warn(`[Replay Protection] Dropped stale SOS payload: ${data.id}`);
-      return;
-    }
+    if (eventTimeSec < nowSec - 300) return; // Silent discard
 
     showToast(`🚨 SOS from ${data.triggeredByDisplayName || 'contact'}! Tap Alerts to respond.`, 'sos', 10000);
     const badge = document.getElementById('alert-badge');
@@ -402,16 +405,18 @@ function renderContactLocationList() {
   list.innerHTML = entries.map(d => {
     const contact = AppState.contacts.find(c => c.contact?.id === d.userId)?.contact;
     const name = contact?.displayName || contact?.username || d.userId.slice(0,8);
-    const ago = getRelativeTime(new Date(d.timestamp));
-    const init = name[0].toUpperCase();
+    const avatar = IconResolver.getAvatar(contact?.username || d.userId);
+    const time = new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     return `
-      <div class="contact-loc-item" onclick="AppMap.flyToContact('${d.userId}')">
-        <div class="cloc-avatar">${init}</div>
-        <div class="cloc-info">
-          <div class="cloc-name">${name}</div>
-          <div class="cloc-time">Updated ${ago}</div>
+      <div class="contact-loc-item" onclick="AppMap.focusOnUser('${d.userId}')">
+        <div class="cloc-avatar">
+          <img src="${avatar}" alt="" style="width:100%;height:100%;border-radius:50%">
         </div>
-        <button class="cloc-ping" onclick="openRemotePing('${d.userId}','${name}');event.stopPropagation();" aria-label="Ping ${name}">Ping</button>
+        <div class="cloc-info">
+          <div class="cloc-name">${escHtml(name)}</div>
+          <div class="cloc-time">${time} — ${Math.round(d.accuracy || 0)}m precision</div>
+        </div>
+        <button class="cloc-ping" onclick="event.stopPropagation(); triggerRemotePing('${d.userId}')">Ping</button>
       </div>
     `;
   }).join('');

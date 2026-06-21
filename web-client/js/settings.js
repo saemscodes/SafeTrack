@@ -23,7 +23,12 @@ function applySettingsToUI(settings) {
   }
 
   // Effective interval
-  const secs = settings.effectiveIntervalSec;
+  let secs = settings.effectiveIntervalSec;
+  // Fallback to preset if undefined to avoid NaN
+  if (!secs) {
+    const preset = settings.pingPresets?.find(p => p.mode === (settings.pingMode || 'MEDIUM'));
+    secs = preset ? preset.intervalSec : 300; 
+  }
   document.getElementById('effective-interval').textContent =
     secs < 60 ? `${secs}s` : `${Math.round(secs/60)}min`;
 

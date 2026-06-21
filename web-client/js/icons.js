@@ -71,6 +71,15 @@ window.IconResolver = {
       : this.icons.alertsEmpty;
     const existingSpans = alertsBtn.innerHTML.replace(/<svg[\s\S]*?<\/svg>/gi, '');
     alertsBtn.innerHTML = svgContent + existingSpans;
+  },
+
+  /**
+   * Generates a deterministic Boring Avatar URL from a seed string.
+   * Uses brand pallet: [0B0C10, 02B9FC, 7C3AED, F59E0B, EF4444]
+   */
+  getAvatar(seed) {
+    const colors = "0B0C10,02B9FC,7C3AED,F59E0B,EF4444";
+    return `https://source.boringavatars.com/beam/120/${encodeURIComponent(seed)}?colors=${colors}`;
   }
 };
 
