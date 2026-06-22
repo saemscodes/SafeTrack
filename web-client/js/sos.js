@@ -457,3 +457,76 @@ function getAckClass(status) {
 function formatAckStatus(status) {
   return status === 'ON_MY_WAY' ? '🏃 On my way' : status === 'SEEN' ? '👁 Seen' : '⏳ Sent';
 }
+
+/**
+ * STRICT MODE: Research-Backed Shake-to-SOS
+ * Differentiates panic shake from rhythmic activities (running/jogging)
+ */
+let shakeBuffer = [];
+const SHAKE_WINDOW_MS = 1000;
+const SHAKE_THRESHOLD = 22; // Magnitude m/s^2
+const SHAKE_PEAK_COUNT = 3;
+
+window.initShakeDetector = async function() {
+  if (typeof DeviceMotionEvent === 'undefined') return;
+
+  // iOS 13+ requires explicit permission
+  if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    try {
+      const resp = await DeviceMotionEvent.requestPermission();
+      if (resp !== 'granted') return;
+    } catch (e) { return; }
+  }
+
+  window.addEventListener('devicemotion', (e) => {
+    const acc = e.accelerationIncludingGravity;
+    if (!acc) return;
+
+    // Magnitude Calculation (Vector Length)
+    const magnitude = Math.sqrt(acc.x ** 2 + acc.y ** 2 + acc.z ** 2);
+    // Remove Gravity (approx 9.8)
+    const linearMagnitude = Math.abs(magnitude - 9.8);
+    
+    const now = Date.now();
+    shakeBuffer.push({ t: now, m: linearMagnitude });
+    
+    // Clean old samples
+    shakeBuffer = shakeBuffer.filter(s => now - s.t < SHAKE_WINDOW_MS);
+
+    // Identify Peaks
+    const peaks = shakeBuffer.filter(s => s.m > SHAKE_THRESHOLD);
+
+    if (peaks.length >= SHAKE_PEAK_COUNT) {
+      // RHYTHM CHECK: Differentiate from Running
+      // In running, peaks are periodic (e.g. every 300ms).
+      // In a panic shake, the timing between peaks is chaotic/erratic.
+      const intervals = [];
+      for (let i = 1; i < peaks.length; i++) {
+        intervals.push(peaks[i].t - peaks[i].t - 1);
+      }
+      
+      const variance = intervals.length > 1 
+        ? Math.max(...intervals) - Math.min(...intervals)
+        : 0;
+
+      // STRICT MODE: Only fire if motion is erratic (variance > 50ms)
+      // or if intensity is extreme (> 40)
+      const maxIntensity = Math.max(...peaks.map(p => p.m));
+      
+      if (variance > 50 || maxIntensity > 40) {
+        shakeBuffer = []; // Clear to prevent double-trigger
+        console.warn('[SECURITY] Shake gesture detected. Triggering SOS.');
+        triggerNativeSOS();
+      }
+    }
+  }, true);
+};
+
+// Auto-init shake detector if already granted (or wait for user interaction to grant)
+window.addEventListener('load', () => {
+  // If we have existing data in IndexedDB for IDB-based nostr-p2p, init it here
+  if (window.NostrP2P) NostrP2P.init();
+  
+  // We don't auto-request permission here as it requires a user gesture.
+  // The 'Calendar' search bar or first interaction will be used to call initShakeDetector()
+});

@@ -842,6 +842,7 @@
       setTimeout(() => {
         showScreen('app-screen');
         if (typeof showApp === 'function') showApp();
+        if (typeof initShakeDetector === 'function') initShakeDetector().catch(() => {});
         CalendarApp.loadFromServer().catch(() => { });
       }, 300);
     }
