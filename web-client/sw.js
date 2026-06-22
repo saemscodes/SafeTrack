@@ -3,13 +3,21 @@ const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/css/main.css',
+  '/css/calendar.css',
   '/js/app.js',
   '/js/sos.js',
   '/js/icons.js',
   '/js/dock.js',
   '/js/auth-router.js',
   '/js/map.js',
-  '/js/bip39.js'
+  '/js/bip39.js',
+  '/js/calendar.js',
+  '/js/api.js',
+  '/js/contacts.js',
+  '/js/trackers.js',
+  '/js/settings.js',
+  '/js/nostr-p2p.js',
+  '/js/avatar-engine.js'
 ];
 
 self.addEventListener('install', event => {

@@ -26,7 +26,13 @@ function applySettingsToUI(settings) {
   let secs = Number(settings.effectiveIntervalSec);
   // Fallback to preset if undefined or invalid to avoid NaN
   if (!secs || isNaN(secs)) {
-    const preset = settings.pingPresets?.find(p => p.mode === (settings.pingMode || 'MEDIUM'));
+    const activeMode = settings.pingMode || 'MEDIUM';
+    const presets = settings.pingPresets || [
+      {mode:'HIGH', intervalSec: 30},
+      {mode:'MEDIUM', intervalSec: 300},
+      {mode:'LOW', intervalSec: 900}
+    ];
+    const preset = presets.find(p => p.mode === activeMode);
     secs = preset ? Number(preset.intervalSec) : 300; 
   }
   

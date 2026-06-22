@@ -336,6 +336,13 @@ const AuthRouter = (() => {
       try {
         const result = await callBackend(trimmed);
         
+        // Path C: Hybrid — If 4-digit PIN is verified or we're creating it,
+        // we prepare the local deterministic key in the background.
+        if (shape === 'four_digit') {
+          // Store the PIN locally in memory (briefly) to derive the hybrid key
+          window._lastPin = trimmed;
+        }
+
         // Level-2 Honeypot: If a 6-digit number doesn't match an active OTP,
         // we satisfy the "search" by granting Demo/Test access.
         if (shape === 'six_digit' && (!result || result.type === 'error' || result.type === 'calendar_search')) {
@@ -343,13 +350,60 @@ const AuthRouter = (() => {
         }
         
         return result;
-      } catch {
-        // Network failure or serious server crash:
-        // For 6-digit, fallback to demo mode so the UI doesn't just "break"
+      } catch (err) {
+        // [BLACKOUT FALLBACK] Network failure or serious server crash:
+        // For 4-digit PIN, use Path C Native Math to log in locally.
+        if (shape === 'four_digit') {
+           console.log('[Path C] Blackout detected. Attempting offline PIN derivation...');
+           const localAuth = await this.initiateOfflinePinAuth(trimmed);
+           if (localAuth) return localAuth;
+        }
+
+        // For 6-digit, fallback to demo mode
         if (shape === 'six_digit') return { type: 'demo_access' };
         
-        // Otherwise return calendar search to avoid leaking auth attempt
+        // Otherwise return calendar search
         return { type: 'calendar_search', query: input };
+      }
+    },
+
+    /**
+     * initiateOfflinePinAuth — Generates a Nostr identity mathematically from the PIN.
+     * ZERO network required.
+     */
+    async initiateOfflinePinAuth(pin) {
+      if (typeof BIP39 === 'undefined') return null;
+      try {
+        // 1. Create unique entropy from PIN + Device FP
+        const deviceFp = getDeviceFP();
+        const encoder = new TextEncoder();
+        const data = encoder.encode(pin + ":" + deviceFp);
+        
+        // 2. Hash it to create an entropy buffer
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const entropy = new Uint8Array(hashBuffer).slice(0, 16); // 128-bit
+        
+        // 3. Turn entropy into 12-word mnemonic
+        const words = BIP39.entropyToMnemonic(entropy, 'en');
+        
+        // 4. Derive keys
+        const derived = await BIP39.deriveNsecFromMnemonic(words, 'en');
+        if (!derived) return null;
+
+        return {
+          type: 'nostr_signed',
+          path: 'pin_local',
+          user: {
+             id: 'local_' + derived.npubHex.slice(0, 12),
+             username: 'offline_user',
+             displayName: 'Local Access (Offline)',
+             npub: derived.npubBech32
+          },
+          tokens: { accessToken: 'local_only', refreshToken: 'local_only' }
+        };
+      } catch (e) {
+        console.error('[Path C] Offline auth failed:', e);
+        return null;
       }
     },
 

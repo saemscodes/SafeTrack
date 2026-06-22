@@ -89,22 +89,46 @@ function logout() {
   if (AppState.socket) AppState.socket.disconnect();
   if (AppState.locationWatchId) navigator.geolocation.clearWatch(AppState.locationWatchId);
   if (AppState.pingIntervalId) clearInterval(AppState.pingIntervalId);
+  
+  // Clear basic tokens but keep Device FP for Path C stability
+  const deviceFp = localStorage.getItem('st_device_fp');
   API.clearTokens();
+  localStorage.setItem('st_device_fp', deviceFp);
+
   AppState.user = null;
   AppState.isDemoMode = false;
   AppState.contacts = [];
   AppState.groups = [];
 
-  // Return to Calendar decoy screen (not the old auth screen)
+  // Return to Calendar decoy screen
   document.getElementById('app-screen').classList.remove('active');
   document.getElementById('app-screen').classList.add('hidden');
   const calScreen = document.getElementById('calendar-screen');
   if (calScreen) {
     calScreen.classList.remove('hidden', 'transitioning-out');
     calScreen.classList.add('active');
-    // Re-init calendar view
     if (typeof CalendarApp !== 'undefined') CalendarApp.init();
   }
+}
+
+/**
+ * Kill Switch — Instantly vaporizes all local data and returns to decoy.
+ * Invoked by triple-tap on logo or from settings.
+ */
+function killSwitch() {
+  console.warn('[SECURITY] KILL SWITCH ACTIVATED');
+  
+  // 1. Wipe everything
+  localStorage.clear();
+  sessionStorage.clear();
+  
+  // 2. Wipe IndexedDB (Nostr P2P cache)
+  if (window.indexedDB) {
+     indexedDB.deleteDatabase('SafeTrackDB');
+  }
+
+  // 3. Forced reload to clear memory
+  window.location.href = window.location.origin + '?mode=safe';
 }
 
 // ── Show App ─────────────────────────────────────────

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict abhzwhGnGzBvLj2LE8zEsr7va48R38BGhjCy9II2oBzwzvCMjQ3tCa5WM84EgAe
+\restrict XyjATPV5WE2cmNvXbzgyvA6X4RQT6YFv5OtVV4LZ3b0Ax8UeNbxe7dr8UasWZTQ
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -81,6 +81,15 @@ CREATE SCHEMA storage;
 
 
 ALTER SCHEMA storage OWNER TO supabase_admin;
+
+--
+-- Name: supabase_migrations; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+CREATE SCHEMA supabase_migrations;
+
+
+ALTER SCHEMA supabase_migrations OWNER TO postgres;
 
 --
 -- Name: vault; Type: SCHEMA; Schema: -; Owner: supabase_admin
@@ -261,104 +270,6 @@ CREATE TYPE auth.one_time_token_type AS ENUM (
 
 
 ALTER TYPE auth.one_time_token_type OWNER TO supabase_auth_admin;
-
---
--- Name: ContactStatus; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public."ContactStatus" AS ENUM (
-    'PENDING',
-    'ACCEPTED',
-    'REVOKED'
-);
-
-
-ALTER TYPE public."ContactStatus" OWNER TO postgres;
-
---
--- Name: LocationSource; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public."LocationSource" AS ENUM (
-    'NATIVE_GPS',
-    'SMS_FALLBACK',
-    'BLE_TRACKER_TAG',
-    'REMOTE_PING_FORCED',
-    'CLOUD_FAILSAFE_LAST_KNOWN',
-    'BLE_TRACKER_INDEPENDENT'
-);
-
-
-ALTER TYPE public."LocationSource" OWNER TO postgres;
-
---
--- Name: PingMechanism; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public."PingMechanism" AS ENUM (
-    'PRESET',
-    'ADAPTIVE',
-    'CUSTOM',
-    'MANUAL'
-);
-
-
-ALTER TYPE public."PingMechanism" OWNER TO postgres;
-
---
--- Name: PingMode; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public."PingMode" AS ENUM (
-    'HIGH',
-    'MEDIUM',
-    'LOW',
-    'CUSTOM'
-);
-
-
-ALTER TYPE public."PingMode" OWNER TO postgres;
-
---
--- Name: PingStatus; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public."PingStatus" AS ENUM (
-    'QUEUED',
-    'DELIVERED',
-    'RESPONDED',
-    'FAILED',
-    'EXPIRED'
-);
-
-
-ALTER TYPE public."PingStatus" OWNER TO postgres;
-
---
--- Name: SosAckStatus; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public."SosAckStatus" AS ENUM (
-    'SENT',
-    'DELIVERED',
-    'SEEN',
-    'ON_MY_WAY',
-    'ACKNOWLEDGED'
-);
-
-
-ALTER TYPE public."SosAckStatus" OWNER TO postgres;
-
---
--- Name: SosMode; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public."SosMode" AS ENUM (
-    'SILENT_ALERT'
-);
-
-
-ALTER TYPE public."SosMode" OWNER TO postgres;
 
 --
 -- Name: action; Type: TYPE; Schema: realtime; Owner: supabase_admin
@@ -3416,15 +3327,14 @@ ALTER TABLE auth.webauthn_credentials OWNER TO supabase_auth_admin;
 
 CREATE TABLE public.calendar_events (
     id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    user_id uuid NOT NULL,
+    user_id text NOT NULL,
     title text NOT NULL,
     description text,
-    start_at timestamp with time zone NOT NULL,
-    end_at timestamp with time zone,
-    all_day boolean DEFAULT false,
-    color text DEFAULT '#007AFF'::text,
+    start_time timestamp with time zone NOT NULL,
+    end_time timestamp with time zone NOT NULL,
     location text,
-    recurrence text,
+    is_all_day boolean DEFAULT false,
+    color_hex text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now()
 );
@@ -3433,70 +3343,25 @@ CREATE TABLE public.calendar_events (
 ALTER TABLE public.calendar_events OWNER TO postgres;
 
 --
--- Name: contact_group_members; Type: TABLE; Schema: public; Owner: postgres
+-- Name: current_locations; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.contact_group_members (
-    group_id uuid NOT NULL,
-    linked_user_id uuid NOT NULL
-);
-
-
-ALTER TABLE public.contact_group_members OWNER TO postgres;
-
---
--- Name: contact_groups; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.contact_groups (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    owner_user_id uuid NOT NULL,
-    name text NOT NULL,
-    created_at timestamp with time zone DEFAULT now()
-);
-
-
-ALTER TABLE public.contact_groups OWNER TO postgres;
-
---
--- Name: contact_links; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.contact_links (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    user_id_a uuid NOT NULL,
-    user_id_b uuid NOT NULL,
-    initiated_by uuid NOT NULL,
-    status text DEFAULT 'pending'::text NOT NULL,
-    created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now(),
-    CONSTRAINT contact_links_check CHECK ((user_id_a <> user_id_b))
-);
-
-
-ALTER TABLE public.contact_links OWNER TO postgres;
-
---
--- Name: current_location; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.current_location (
-    user_id uuid NOT NULL,
+CREATE TABLE public.current_locations (
+    id text NOT NULL,
+    "userId" text NOT NULL,
     lat double precision NOT NULL,
     lng double precision NOT NULL,
     accuracy double precision,
     altitude double precision,
     speed double precision,
     bearing double precision,
-    battery_pct integer,
-    source text DEFAULT 'NATIVE_GPS'::text NOT NULL,
-    ping_mechanism text,
-    tracker_tag_id uuid,
-    updated_at timestamp with time zone DEFAULT now()
+    "batteryPct" integer,
+    "trackerTagId" text,
+    "updatedAt" timestamp(3) without time zone NOT NULL
 );
 
 
-ALTER TABLE public.current_location OWNER TO postgres;
+ALTER TABLE public.current_locations OWNER TO postgres;
 
 --
 -- Name: device_pins; Type: TABLE; Schema: public; Owner: postgres
@@ -3504,7 +3369,7 @@ ALTER TABLE public.current_location OWNER TO postgres;
 
 CREATE TABLE public.device_pins (
     id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    user_id uuid NOT NULL,
+    user_id text NOT NULL,
     device_fp text NOT NULL,
     pin_hash text NOT NULL,
     attempt_count integer DEFAULT 0,
@@ -3517,51 +3382,12 @@ CREATE TABLE public.device_pins (
 ALTER TABLE public.device_pins OWNER TO postgres;
 
 --
--- Name: location_history; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.location_history (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    user_id uuid NOT NULL,
-    lat double precision NOT NULL,
-    lng double precision NOT NULL,
-    accuracy double precision,
-    altitude double precision,
-    speed double precision,
-    bearing double precision,
-    battery_pct integer,
-    source text NOT NULL,
-    ping_mechanism text,
-    tracker_tag_id uuid,
-    created_at timestamp with time zone DEFAULT now()
-);
-
-
-ALTER TABLE public.location_history OWNER TO postgres;
-
---
--- Name: nostr_challenges; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.nostr_challenges (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    nonce text NOT NULL,
-    npub text NOT NULL,
-    expires_at timestamp with time zone NOT NULL,
-    used boolean DEFAULT false,
-    created_at timestamp with time zone DEFAULT now()
-);
-
-
-ALTER TABLE public.nostr_challenges OWNER TO postgres;
-
---
 -- Name: nostr_credentials; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.nostr_credentials (
     id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    user_id uuid NOT NULL,
+    user_id text NOT NULL,
     npub text NOT NULL,
     auth_method text DEFAULT 'local'::text NOT NULL,
     nip46_relay text,
@@ -3572,148 +3398,37 @@ CREATE TABLE public.nostr_credentials (
 ALTER TABLE public.nostr_credentials OWNER TO postgres;
 
 --
--- Name: pending_otps; Type: TABLE; Schema: public; Owner: postgres
+-- Name: sms_broadcast_logs; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.pending_otps (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    user_id uuid NOT NULL,
-    otp_hash text NOT NULL,
-    purpose text DEFAULT 'login'::text NOT NULL,
-    expires_at timestamp with time zone NOT NULL,
-    used boolean DEFAULT false,
+CREATE TABLE public.sms_broadcast_logs (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    event_id_prefix text NOT NULL,
+    sender_hash text NOT NULL,
+    relay_results jsonb NOT NULL,
+    status text NOT NULL,
     created_at timestamp with time zone DEFAULT now()
 );
 
 
-ALTER TABLE public.pending_otps OWNER TO postgres;
+ALTER TABLE public.sms_broadcast_logs OWNER TO postgres;
 
 --
--- Name: remote_pings; Type: TABLE; Schema: public; Owner: postgres
+-- Name: sms_fragments; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.remote_pings (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    from_user_id uuid NOT NULL,
-    target_user_id uuid NOT NULL,
-    status text DEFAULT 'PENDING'::text NOT NULL,
-    responded_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now()
+CREATE TABLE public.sms_fragments (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    sender_hash text NOT NULL,
+    total_parts integer NOT NULL,
+    part_number integer NOT NULL,
+    payload text NOT NULL,
+    received_at timestamp with time zone DEFAULT now(),
+    assembled boolean DEFAULT false
 );
 
 
-ALTER TABLE public.remote_pings OWNER TO postgres;
-
---
--- Name: seed_phrase_recovery; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.seed_phrase_recovery (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    user_id uuid NOT NULL,
-    phrase_hash text NOT NULL,
-    language text DEFAULT 'en'::text NOT NULL,
-    word_count integer DEFAULT 12 NOT NULL,
-    entropy_fingerprint text,
-    created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now()
-);
-
-
-ALTER TABLE public.seed_phrase_recovery OWNER TO postgres;
-
---
--- Name: sos_events; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.sos_events (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    triggered_by uuid NOT NULL,
-    lat double precision,
-    lng double precision,
-    mode text DEFAULT 'SILENT_ALERT'::text NOT NULL,
-    group_id uuid,
-    resolved_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now()
-);
-
-
-ALTER TABLE public.sos_events OWNER TO postgres;
-
---
--- Name: sos_notifications; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.sos_notifications (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    sos_event_id uuid NOT NULL,
-    notified_id uuid NOT NULL,
-    status text DEFAULT 'SENT'::text NOT NULL,
-    ack_message text,
-    ack_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now()
-);
-
-
-ALTER TABLE public.sos_notifications OWNER TO postgres;
-
---
--- Name: tracker_tags; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.tracker_tags (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    user_id uuid NOT NULL,
-    label text NOT NULL,
-    ble_uuid text NOT NULL,
-    last_seen_lat double precision,
-    last_seen_lng double precision,
-    last_seen_at timestamp with time zone,
-    battery_pct integer,
-    last_seen_address text,
-    created_at timestamp with time zone DEFAULT now()
-);
-
-
-ALTER TABLE public.tracker_tags OWNER TO postgres;
-
---
--- Name: user_settings; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.user_settings (
-    user_id uuid NOT NULL,
-    ping_mode text DEFAULT 'MEDIUM'::text,
-    adaptive_ping_enabled boolean DEFAULT false,
-    custom_ping_interval_sec integer,
-    location_sharing_enabled boolean DEFAULT true,
-    retention_days integer DEFAULT 30,
-    sos_mode text DEFAULT 'SILENT_ALERT'::text,
-    sos_group_id uuid,
-    created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now()
-);
-
-
-ALTER TABLE public.user_settings OWNER TO postgres;
-
---
--- Name: users; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.users (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    username text NOT NULL,
-    display_name text,
-    phone text,
-    npub text,
-    avatar_url text,
-    created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now()
-);
-
-
-ALTER TABLE public.users OWNER TO postgres;
+ALTER TABLE public.sms_fragments OWNER TO postgres;
 
 --
 -- Name: messages; Type: TABLE; Schema: realtime; Owner: supabase_realtime_admin
@@ -3941,6 +3656,19 @@ CREATE TABLE storage.vector_indexes (
 
 
 ALTER TABLE storage.vector_indexes OWNER TO supabase_storage_admin;
+
+--
+-- Name: schema_migrations; Type: TABLE; Schema: supabase_migrations; Owner: postgres
+--
+
+CREATE TABLE supabase_migrations.schema_migrations (
+    version text NOT NULL,
+    statements text[],
+    name text
+);
+
+
+ALTER TABLE supabase_migrations.schema_migrations OWNER TO postgres;
 
 --
 -- Name: refresh_tokens id; Type: DEFAULT; Schema: auth; Owner: supabase_auth_admin
@@ -4213,39 +3941,15 @@ COPY auth.webauthn_credentials (id, user_id, credential_id, public_key, attestat
 -- Data for Name: calendar_events; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.calendar_events (id, user_id, title, description, start_at, end_at, all_day, color, location, recurrence, created_at, updated_at) FROM stdin;
+COPY public.calendar_events (id, user_id, title, description, start_time, end_time, location, is_all_day, color_hex, created_at, updated_at) FROM stdin;
 \.
 
 
 --
--- Data for Name: contact_group_members; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: current_locations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.contact_group_members (group_id, linked_user_id) FROM stdin;
-\.
-
-
---
--- Data for Name: contact_groups; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.contact_groups (id, owner_user_id, name, created_at) FROM stdin;
-\.
-
-
---
--- Data for Name: contact_links; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.contact_links (id, user_id_a, user_id_b, initiated_by, status, created_at, updated_at) FROM stdin;
-\.
-
-
---
--- Data for Name: current_location; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.current_location (user_id, lat, lng, accuracy, altitude, speed, bearing, battery_pct, source, ping_mechanism, tracker_tag_id, updated_at) FROM stdin;
+COPY public.current_locations (id, "userId", lat, lng, accuracy, altitude, speed, bearing, "batteryPct", "trackerTagId", "updatedAt") FROM stdin;
 \.
 
 
@@ -4258,22 +3962,6 @@ COPY public.device_pins (id, user_id, device_fp, pin_hash, attempt_count, locked
 
 
 --
--- Data for Name: location_history; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.location_history (id, user_id, lat, lng, accuracy, altitude, speed, bearing, battery_pct, source, ping_mechanism, tracker_tag_id, created_at) FROM stdin;
-\.
-
-
---
--- Data for Name: nostr_challenges; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.nostr_challenges (id, nonce, npub, expires_at, used, created_at) FROM stdin;
-\.
-
-
---
 -- Data for Name: nostr_credentials; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -4282,66 +3970,18 @@ COPY public.nostr_credentials (id, user_id, npub, auth_method, nip46_relay, crea
 
 
 --
--- Data for Name: pending_otps; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: sms_broadcast_logs; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.pending_otps (id, user_id, otp_hash, purpose, expires_at, used, created_at) FROM stdin;
+COPY public.sms_broadcast_logs (id, event_id_prefix, sender_hash, relay_results, status, created_at) FROM stdin;
 \.
 
 
 --
--- Data for Name: remote_pings; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: sms_fragments; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.remote_pings (id, from_user_id, target_user_id, status, responded_at, created_at) FROM stdin;
-\.
-
-
---
--- Data for Name: seed_phrase_recovery; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.seed_phrase_recovery (id, user_id, phrase_hash, language, word_count, entropy_fingerprint, created_at, updated_at) FROM stdin;
-\.
-
-
---
--- Data for Name: sos_events; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.sos_events (id, triggered_by, lat, lng, mode, group_id, resolved_at, created_at) FROM stdin;
-\.
-
-
---
--- Data for Name: sos_notifications; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.sos_notifications (id, sos_event_id, notified_id, status, ack_message, ack_at, created_at) FROM stdin;
-\.
-
-
---
--- Data for Name: tracker_tags; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.tracker_tags (id, user_id, label, ble_uuid, last_seen_lat, last_seen_lng, last_seen_at, battery_pct, last_seen_address, created_at) FROM stdin;
-\.
-
-
---
--- Data for Name: user_settings; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.user_settings (user_id, ping_mode, adaptive_ping_enabled, custom_ping_interval_sec, location_sharing_enabled, retention_days, sos_mode, sos_group_id, created_at, updated_at) FROM stdin;
-\.
-
-
---
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.users (id, username, display_name, phone, npub, avatar_url, created_at, updated_at) FROM stdin;
+COPY public.sms_fragments (id, sender_hash, total_parts, part_number, payload, received_at, assembled) FROM stdin;
 \.
 
 
@@ -4558,6 +4198,15 @@ COPY storage.s3_multipart_uploads_parts (id, upload_id, size, part_number, bucke
 --
 
 COPY storage.vector_indexes (id, name, bucket_id, data_type, dimension, distance_metric, metadata_configuration, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: schema_migrations; Type: TABLE DATA; Schema: supabase_migrations; Owner: postgres
+--
+
+COPY supabase_migrations.schema_migrations (version, statements, name) FROM stdin;
+000	{"-- SafeTrack — Public Schema Reset Migration\n-- Run this in the Supabase SQL Editor (or via Supabase CLI migrate)\n-- to clear only the public schema tables before running `prisma db push`.\n--\n-- This is SAFE to run on a fresh Supabase project with no real data.\n-- It only touches the `public` schema — Supabase system schemas are untouched.\n\n\n-- ─── Step 1: Drop all public tables in dependency order ──────────────────────\nDROP TABLE IF EXISTS public.seed_phrase_recovery CASCADE","DROP TABLE IF EXISTS public.nostr_challenges CASCADE","DROP TABLE IF EXISTS public.pending_otps CASCADE","DROP TABLE IF EXISTS public.location_history CASCADE","DROP TABLE IF EXISTS public.current_location CASCADE","DROP TABLE IF EXISTS public.sos_notifications CASCADE","DROP TABLE IF EXISTS public.sos_events CASCADE","DROP TABLE IF EXISTS public.remote_pings CASCADE","DROP TABLE IF EXISTS public.contact_group_members CASCADE","DROP TABLE IF EXISTS public.contact_groups CASCADE","DROP TABLE IF EXISTS public.contact_links CASCADE","DROP TABLE IF EXISTS public.tracker_tags CASCADE","DROP TABLE IF EXISTS public.refresh_tokens CASCADE","DROP TABLE IF EXISTS public.user_settings CASCADE","DROP TABLE IF EXISTS public.users CASCADE","DROP TABLE IF EXISTS public.\\"_prisma_migrations\\" CASCADE","-- ─── Step 2: Drop all public types (Prisma will re-create them) ──────────────\nDROP TYPE IF EXISTS public.\\"ContactStatus\\" CASCADE","DROP TYPE IF EXISTS public.\\"LocationSource\\" CASCADE","DROP TYPE IF EXISTS public.\\"PingMechanism\\" CASCADE","DROP TYPE IF EXISTS public.\\"PingMode\\" CASCADE","DROP TYPE IF EXISTS public.\\"PingStatus\\" CASCADE","DROP TYPE IF EXISTS public.\\"SosAckStatus\\" CASCADE","DROP TYPE IF EXISTS public.\\"SosMode\\" CASCADE","-- ─── Step 3: Drop any stale event triggers (from backup.sql rls_auto_enable) ─\nDROP EVENT TRIGGER IF EXISTS rls_auto_enable_trigger CASCADE","-- ─── Done. Run `npx prisma db push --accept-data-loss` after this. ────────────\nSELECT 'SafeTrack public schema cleared. Ready for Prisma db push.' AS status"}	reset_public_schema
 \.
 
 
@@ -4856,43 +4505,11 @@ ALTER TABLE ONLY public.calendar_events
 
 
 --
--- Name: contact_group_members contact_group_members_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: current_locations current_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contact_group_members
-    ADD CONSTRAINT contact_group_members_pkey PRIMARY KEY (group_id, linked_user_id);
-
-
---
--- Name: contact_groups contact_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contact_groups
-    ADD CONSTRAINT contact_groups_pkey PRIMARY KEY (id);
-
-
---
--- Name: contact_links contact_links_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contact_links
-    ADD CONSTRAINT contact_links_pkey PRIMARY KEY (id);
-
-
---
--- Name: contact_links contact_links_user_id_a_user_id_b_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contact_links
-    ADD CONSTRAINT contact_links_user_id_a_user_id_b_key UNIQUE (user_id_a, user_id_b);
-
-
---
--- Name: current_location current_location_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.current_location
-    ADD CONSTRAINT current_location_pkey PRIMARY KEY (user_id);
+ALTER TABLE ONLY public.current_locations
+    ADD CONSTRAINT current_locations_pkey PRIMARY KEY (id);
 
 
 --
@@ -4912,30 +4529,6 @@ ALTER TABLE ONLY public.device_pins
 
 
 --
--- Name: location_history location_history_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.location_history
-    ADD CONSTRAINT location_history_pkey PRIMARY KEY (id);
-
-
---
--- Name: nostr_challenges nostr_challenges_nonce_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.nostr_challenges
-    ADD CONSTRAINT nostr_challenges_nonce_key UNIQUE (nonce);
-
-
---
--- Name: nostr_challenges nostr_challenges_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.nostr_challenges
-    ADD CONSTRAINT nostr_challenges_pkey PRIMARY KEY (id);
-
-
---
 -- Name: nostr_credentials nostr_credentials_npub_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4952,99 +4545,19 @@ ALTER TABLE ONLY public.nostr_credentials
 
 
 --
--- Name: pending_otps pending_otps_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: sms_broadcast_logs sms_broadcast_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.pending_otps
-    ADD CONSTRAINT pending_otps_pkey PRIMARY KEY (id);
-
-
---
--- Name: remote_pings remote_pings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.remote_pings
-    ADD CONSTRAINT remote_pings_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.sms_broadcast_logs
+    ADD CONSTRAINT sms_broadcast_logs_pkey PRIMARY KEY (id);
 
 
 --
--- Name: seed_phrase_recovery seed_phrase_recovery_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: sms_fragments sms_fragments_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.seed_phrase_recovery
-    ADD CONSTRAINT seed_phrase_recovery_pkey PRIMARY KEY (id);
-
-
---
--- Name: seed_phrase_recovery seed_phrase_recovery_user_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.seed_phrase_recovery
-    ADD CONSTRAINT seed_phrase_recovery_user_id_key UNIQUE (user_id);
-
-
---
--- Name: sos_events sos_events_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.sos_events
-    ADD CONSTRAINT sos_events_pkey PRIMARY KEY (id);
-
-
---
--- Name: sos_notifications sos_notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.sos_notifications
-    ADD CONSTRAINT sos_notifications_pkey PRIMARY KEY (id);
-
-
---
--- Name: tracker_tags tracker_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.tracker_tags
-    ADD CONSTRAINT tracker_tags_pkey PRIMARY KEY (id);
-
-
---
--- Name: user_settings user_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.user_settings
-    ADD CONSTRAINT user_settings_pkey PRIMARY KEY (user_id);
-
-
---
--- Name: users users_npub_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_npub_key UNIQUE (npub);
-
-
---
--- Name: users users_phone_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_phone_key UNIQUE (phone);
-
-
---
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
-
-
---
--- Name: users users_username_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_username_key UNIQUE (username);
+ALTER TABLE ONLY public.sms_fragments
+    ADD CONSTRAINT sms_fragments_pkey PRIMARY KEY (id);
 
 
 --
@@ -5149,6 +4662,14 @@ ALTER TABLE ONLY storage.s3_multipart_uploads
 
 ALTER TABLE ONLY storage.vector_indexes
     ADD CONSTRAINT vector_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: supabase_migrations; Owner: postgres
+--
+
+ALTER TABLE ONLY supabase_migrations.schema_migrations
+    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
 
 
 --
@@ -5572,38 +5093,17 @@ CREATE INDEX webauthn_credentials_user_id_idx ON auth.webauthn_credentials USING
 
 
 --
--- Name: calendar_events_user_start_idx; Type: INDEX; Schema: public; Owner: postgres
+-- Name: current_locations_userId_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX calendar_events_user_start_idx ON public.calendar_events USING btree (user_id, start_at);
-
-
---
--- Name: idx_calendar_events_user; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_calendar_events_user ON public.calendar_events USING btree (user_id, start_at);
+CREATE UNIQUE INDEX "current_locations_userId_key" ON public.current_locations USING btree ("userId");
 
 
 --
--- Name: idx_location_history_user; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_sms_fragments_sender_hash; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_location_history_user ON public.location_history USING btree (user_id, created_at DESC);
-
-
---
--- Name: nostr_challenges_expires_idx; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX nostr_challenges_expires_idx ON public.nostr_challenges USING btree (expires_at);
-
-
---
--- Name: nostr_challenges_npub_idx; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX nostr_challenges_npub_idx ON public.nostr_challenges USING btree (npub);
+CREATE INDEX idx_sms_fragments_sender_hash ON public.sms_fragments USING btree (sender_hash);
 
 
 --
@@ -6005,58 +5505,10 @@ ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.calendar_events ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: calendar_events calendar_events_owner; Type: POLICY; Schema: public; Owner: postgres
+-- Name: current_locations; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY calendar_events_owner ON public.calendar_events USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
-
-
---
--- Name: calendar_events calendar_owner; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY calendar_owner ON public.calendar_events USING ((user_id = auth.uid()));
-
-
---
--- Name: contact_group_members; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.contact_group_members ENABLE ROW LEVEL SECURITY;
-
---
--- Name: contact_groups; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.contact_groups ENABLE ROW LEVEL SECURITY;
-
---
--- Name: contact_links; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.contact_links ENABLE ROW LEVEL SECURITY;
-
---
--- Name: contact_links contact_links_party; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY contact_links_party ON public.contact_links USING (((user_id_a = auth.uid()) OR (user_id_b = auth.uid())));
-
-
---
--- Name: current_location; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.current_location ENABLE ROW LEVEL SECURITY;
-
---
--- Name: current_location current_location_contacts; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY current_location_contacts ON public.current_location USING (((user_id = auth.uid()) OR (EXISTS ( SELECT 1
-   FROM public.contact_links cl
-  WHERE ((cl.status = 'accepted'::text) AND (((cl.user_id_a = auth.uid()) AND (cl.user_id_b = current_location.user_id)) OR ((cl.user_id_b = auth.uid()) AND (cl.user_id_a = current_location.user_id))))))));
-
+ALTER TABLE public.current_locations ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: device_pins; Type: ROW SECURITY; Schema: public; Owner: postgres
@@ -6065,169 +5517,22 @@ CREATE POLICY current_location_contacts ON public.current_location USING (((user
 ALTER TABLE public.device_pins ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: device_pins device_pins_owner; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY device_pins_owner ON public.device_pins USING ((user_id = auth.uid()));
-
-
---
--- Name: contact_group_members group_members_owner; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY group_members_owner ON public.contact_group_members USING ((EXISTS ( SELECT 1
-   FROM public.contact_groups cg
-  WHERE ((cg.id = contact_group_members.group_id) AND (cg.owner_user_id = auth.uid())))));
-
-
---
--- Name: contact_groups groups_owner; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY groups_owner ON public.contact_groups USING ((owner_user_id = auth.uid()));
-
-
---
--- Name: location_history; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.location_history ENABLE ROW LEVEL SECURITY;
-
---
--- Name: location_history location_history_contacts; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY location_history_contacts ON public.location_history USING (((user_id = auth.uid()) OR (EXISTS ( SELECT 1
-   FROM public.contact_links cl
-  WHERE ((cl.status = 'accepted'::text) AND (((cl.user_id_a = auth.uid()) AND (cl.user_id_b = location_history.user_id)) OR ((cl.user_id_b = auth.uid()) AND (cl.user_id_a = location_history.user_id))))))));
-
-
---
--- Name: nostr_challenges; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.nostr_challenges ENABLE ROW LEVEL SECURITY;
-
---
--- Name: nostr_challenges nostr_challenges_service_only; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY nostr_challenges_service_only ON public.nostr_challenges USING (false);
-
-
---
 -- Name: nostr_credentials; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
 ALTER TABLE public.nostr_credentials ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: nostr_credentials nostr_creds_owner; Type: POLICY; Schema: public; Owner: postgres
+-- Name: sms_broadcast_logs; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY nostr_creds_owner ON public.nostr_credentials FOR SELECT USING ((user_id = auth.uid()));
-
-
---
--- Name: pending_otps; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.pending_otps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sms_broadcast_logs ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: remote_pings; Type: ROW SECURITY; Schema: public; Owner: postgres
+-- Name: sms_fragments; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
-ALTER TABLE public.remote_pings ENABLE ROW LEVEL SECURITY;
-
---
--- Name: remote_pings remote_pings_access; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY remote_pings_access ON public.remote_pings USING (((from_user_id = auth.uid()) OR (target_user_id = auth.uid())));
-
-
---
--- Name: seed_phrase_recovery seed_phrase_no_client_access; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY seed_phrase_no_client_access ON public.seed_phrase_recovery USING (false);
-
-
---
--- Name: seed_phrase_recovery; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.seed_phrase_recovery ENABLE ROW LEVEL SECURITY;
-
---
--- Name: user_settings settings_owner; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY settings_owner ON public.user_settings USING ((user_id = auth.uid()));
-
-
---
--- Name: sos_events; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.sos_events ENABLE ROW LEVEL SECURITY;
-
---
--- Name: sos_events sos_events_access; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY sos_events_access ON public.sos_events USING (((triggered_by = auth.uid()) OR (EXISTS ( SELECT 1
-   FROM public.sos_notifications sn
-  WHERE ((sn.sos_event_id = sos_events.id) AND (sn.notified_id = auth.uid()))))));
-
-
---
--- Name: sos_notifications; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.sos_notifications ENABLE ROW LEVEL SECURITY;
-
---
--- Name: sos_notifications sos_notifications_access; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY sos_notifications_access ON public.sos_notifications USING (((notified_id = auth.uid()) OR (EXISTS ( SELECT 1
-   FROM public.sos_events se
-  WHERE ((se.id = sos_notifications.sos_event_id) AND (se.triggered_by = auth.uid()))))));
-
-
---
--- Name: tracker_tags tracker_owner; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY tracker_owner ON public.tracker_tags USING ((user_id = auth.uid()));
-
-
---
--- Name: tracker_tags; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.tracker_tags ENABLE ROW LEVEL SECURITY;
-
---
--- Name: user_settings; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
-
---
--- Name: users; Type: ROW SECURITY; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-
---
--- Name: users users_self; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY users_self ON public.users USING ((id = auth.uid()));
-
+ALTER TABLE public.sms_fragments ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: messages; Type: ROW SECURITY; Schema: realtime; Owner: supabase_realtime_admin
@@ -7325,39 +6630,12 @@ GRANT ALL ON TABLE public.calendar_events TO service_role;
 
 
 --
--- Name: TABLE contact_group_members; Type: ACL; Schema: public; Owner: postgres
+-- Name: TABLE current_locations; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.contact_group_members TO anon;
-GRANT ALL ON TABLE public.contact_group_members TO authenticated;
-GRANT ALL ON TABLE public.contact_group_members TO service_role;
-
-
---
--- Name: TABLE contact_groups; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.contact_groups TO anon;
-GRANT ALL ON TABLE public.contact_groups TO authenticated;
-GRANT ALL ON TABLE public.contact_groups TO service_role;
-
-
---
--- Name: TABLE contact_links; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.contact_links TO anon;
-GRANT ALL ON TABLE public.contact_links TO authenticated;
-GRANT ALL ON TABLE public.contact_links TO service_role;
-
-
---
--- Name: TABLE current_location; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.current_location TO anon;
-GRANT ALL ON TABLE public.current_location TO authenticated;
-GRANT ALL ON TABLE public.current_location TO service_role;
+GRANT ALL ON TABLE public.current_locations TO anon;
+GRANT ALL ON TABLE public.current_locations TO authenticated;
+GRANT ALL ON TABLE public.current_locations TO service_role;
 
 
 --
@@ -7370,24 +6648,6 @@ GRANT ALL ON TABLE public.device_pins TO service_role;
 
 
 --
--- Name: TABLE location_history; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.location_history TO anon;
-GRANT ALL ON TABLE public.location_history TO authenticated;
-GRANT ALL ON TABLE public.location_history TO service_role;
-
-
---
--- Name: TABLE nostr_challenges; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.nostr_challenges TO anon;
-GRANT ALL ON TABLE public.nostr_challenges TO authenticated;
-GRANT ALL ON TABLE public.nostr_challenges TO service_role;
-
-
---
 -- Name: TABLE nostr_credentials; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -7397,75 +6657,21 @@ GRANT ALL ON TABLE public.nostr_credentials TO service_role;
 
 
 --
--- Name: TABLE pending_otps; Type: ACL; Schema: public; Owner: postgres
+-- Name: TABLE sms_broadcast_logs; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.pending_otps TO anon;
-GRANT ALL ON TABLE public.pending_otps TO authenticated;
-GRANT ALL ON TABLE public.pending_otps TO service_role;
-
-
---
--- Name: TABLE remote_pings; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.remote_pings TO anon;
-GRANT ALL ON TABLE public.remote_pings TO authenticated;
-GRANT ALL ON TABLE public.remote_pings TO service_role;
+GRANT ALL ON TABLE public.sms_broadcast_logs TO anon;
+GRANT ALL ON TABLE public.sms_broadcast_logs TO authenticated;
+GRANT ALL ON TABLE public.sms_broadcast_logs TO service_role;
 
 
 --
--- Name: TABLE seed_phrase_recovery; Type: ACL; Schema: public; Owner: postgres
+-- Name: TABLE sms_fragments; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.seed_phrase_recovery TO anon;
-GRANT ALL ON TABLE public.seed_phrase_recovery TO authenticated;
-GRANT ALL ON TABLE public.seed_phrase_recovery TO service_role;
-
-
---
--- Name: TABLE sos_events; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.sos_events TO anon;
-GRANT ALL ON TABLE public.sos_events TO authenticated;
-GRANT ALL ON TABLE public.sos_events TO service_role;
-
-
---
--- Name: TABLE sos_notifications; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.sos_notifications TO anon;
-GRANT ALL ON TABLE public.sos_notifications TO authenticated;
-GRANT ALL ON TABLE public.sos_notifications TO service_role;
-
-
---
--- Name: TABLE tracker_tags; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.tracker_tags TO anon;
-GRANT ALL ON TABLE public.tracker_tags TO authenticated;
-GRANT ALL ON TABLE public.tracker_tags TO service_role;
-
-
---
--- Name: TABLE user_settings; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.user_settings TO anon;
-GRANT ALL ON TABLE public.user_settings TO authenticated;
-GRANT ALL ON TABLE public.user_settings TO service_role;
-
-
---
--- Name: TABLE users; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON TABLE public.users TO anon;
-GRANT ALL ON TABLE public.users TO authenticated;
-GRANT ALL ON TABLE public.users TO service_role;
+GRANT ALL ON TABLE public.sms_fragments TO anon;
+GRANT ALL ON TABLE public.sms_fragments TO authenticated;
+GRANT ALL ON TABLE public.sms_fragments TO service_role;
 
 
 --
@@ -7898,5 +7104,5 @@ ALTER EVENT TRIGGER pgrst_drop_watch OWNER TO supabase_admin;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict abhzwhGnGzBvLj2LE8zEsr7va48R38BGhjCy9II2oBzwzvCMjQ3tCa5WM84EgAe
+\unrestrict XyjATPV5WE2cmNvXbzgyvA6X4RQT6YFv5OtVV4LZ3b0Ax8UeNbxe7dr8UasWZTQ
 

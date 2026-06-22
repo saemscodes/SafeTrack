@@ -25,6 +25,19 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <link rel="stylesheet" href="/css/main.css" />
   <link rel="stylesheet" href="/css/calendar.css" />
+  <style>
+    /* Sign Out Button constraint */
+    .btn-danger {
+      max-width: 400px;
+      margin: 20px auto 40px !important;
+      display: block !important;
+      width: auto !important;
+      min-width: 280px;
+    }
+    @media (max-width: 480px) {
+      .btn-danger { width: calc(100% - 40px) !important; min-width: 0; }
+    }
+  </style>
 
   <!-- Supabase config — set your project values here -->
   <script>
@@ -591,7 +604,7 @@
           </div>
         </div>
         </div> <!-- End settings-container -->
-        <button class="btn-danger" style="margin: 0 20px 40px; width: calc(100% - 40px)" onclick="logout()" aria-label="Sign out of SafeTrack">Sign Out</button>
+        <button class="btn-danger" onclick="logout()" aria-label="Sign out of SafeTrack">Sign Out</button>
       </section>
 
     </main>
@@ -771,6 +784,12 @@
       e.preventDefault();
       if (!value) return;
 
+      // Path C: Hardware/Sensor Permission Trigger (iOS Requirement)
+      // Accessing DeviceMotion must be inside a user-initiated event like this.
+      if (typeof initShakeDetector === 'function') {
+         initShakeDetector();
+      }
+
       const shape = AuthRouter.determineShape(value);
       if (shape === 'calendar_text') return; // already shown
 
@@ -803,8 +822,8 @@
             window.AppState && (window.AppState.user = result.user);
           }
           transitionToSafeTrack();
-          // If this was a first-time login (no existing seed phrase), prompt setup
-          if (result.path === 'nostr_register' || result.path === 'pin') {
+          // If this was a first-time login or local derivation, prompt setup
+          if (['nostr_register', 'pin', 'pin_local'].includes(result.path)) {
             setTimeout(() => showSeedSetupModal(), 800);
           }
           break;
@@ -1135,6 +1154,22 @@
       // Check for existing session
       const existingToken = localStorage.getItem('st_access_token');
       const existingUser = localStorage.getItem('st_user');
+
+      // Stealth Kill Switch — Triple tap SafeTrack Logo
+      let _logoTapCount = 0;
+      let _logoTapTimer = null;
+      const logo = document.querySelector('.topbar-left');
+      if (logo) {
+        logo.addEventListener('click', () => {
+          _logoTapCount++;
+          clearTimeout(_logoTapTimer);
+          if (_logoTapCount === 3) {
+            killSwitch();
+          } else {
+            _logoTapTimer = setTimeout(() => { _logoTapCount = 0; }, 1000);
+          }
+        });
+      }
 
       // Show splash, then transition to calendar
       setTimeout(() => {
