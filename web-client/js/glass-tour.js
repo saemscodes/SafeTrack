@@ -6,9 +6,11 @@
  */
 
 (function () {
-  if (!window.location.search.includes('demo=1')) return;
+  window.launchFirstTimeTour = function () {
+    const TOUR_KILL_DATE = new Date('2026-09-30T00:00:00Z');
+    if (new Date() > TOUR_KILL_DATE) return;
 
-  const style = document.createElement('style');
+    const style = document.createElement('style');
   style.textContent = `
     .st-tour-overlay {
       position: fixed;
@@ -123,7 +125,7 @@
       position: 'bottom'
     },
     {
-      target: '.cal-add-btn',
+      target: '.cal-add-day-btn',
       title: 'A Working Calendar',
       text: 'You can add and save real calendar events. This makes the app look totally normal if someone is peeking onto your phone.',
       position: 'bottom'
@@ -212,7 +214,14 @@
     titleEl.textContent = step.title;
     textEl.textContent = step.text;
     progressEl.textContent = `${index + 1} of ${steps.length}`;
-    nextBtn.textContent = index === steps.length - 1 ? 'Finish' : 'Next';
+    
+    if (index === steps.length - 1) {
+      nextBtn.textContent = 'Got it — take me in';
+      skipBtn.style.display = 'none';
+    } else {
+      nextBtn.textContent = 'Next';
+      skipBtn.style.display = 'inline-block';
+    }
 
     // Remove old highlight
     if (currentTargetEl) {
@@ -290,6 +299,7 @@
   }
 
   function endTour() {
+    localStorage.setItem('st_tour_seen', '1');
     if (currentTargetEl) currentTargetEl.classList.remove('st-tour-highlight');
     if (overlay) overlay.style.opacity = '0';
     if (bubble) bubble.classList.remove('visible');
@@ -299,11 +309,16 @@
     }, 350);
   }
 
+  initDOM();
+  showStep(0);
+};
+
   window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-      initDOM();
-      showStep(0);
-    }, 1500);
+    if (window.location.search.includes('demo=1')) {
+      setTimeout(() => {
+        window.launchFirstTimeTour();
+      }, 1500);
+    }
   });
 
 })();

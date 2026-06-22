@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /js/sos.js
+Disallow: /js/auth-router.js
+Disallow: /js/nostr-p2p.js
+Disallow: /js/realtime.js

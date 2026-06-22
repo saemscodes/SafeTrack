@@ -1,20 +1,31 @@
 {
-  "name": "SafeTrack",
-  "short_name": "SafeTrack",
-  "description": "Premium real-time safety and navigation.",
+  "name": "Calendar",
+  "short_name": "Calendar",
+  "description": "Stay organised, plan your days beautifully.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#000000",
-  "background_color": "#000000",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "lang": "en",
+  "scope": "/",
   "icons": [
     {
       "src": "/calendar-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/calendar-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["security", "safety"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "screenshots": []
 }
