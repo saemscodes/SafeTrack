@@ -9,15 +9,17 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Calendar" />
-  <title>Calendar — Plan your days beautifully</title>
-  <meta name="description" content="A clean, fast personal calendar for scheduling events, reminders, and daily planning. Works offline. No account required to browse." />
-  
+  <title>Calendar - Make It Count</title>
+  <meta name="description"
+    content="A clean, fast personal calendar for scheduling events, reminders, and daily planning. Works offline. No account required to browse." />
+
   <meta property="og:title" content="Calendar" />
-  <meta property="og:description" content="A clean, fast personal calendar for scheduling events, reminders, and daily planning. Works offline. No account required to browse." />
+  <meta property="og:description"
+    content="A clean, fast personal calendar for scheduling events, reminders, and daily planning. Works offline. No account required to browse." />
   <meta property="og:image" content="/calendar-icon.png" />
-  
+
   <meta name="twitter:card" content="summary_large_image" />
-  
+
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -58,8 +60,12 @@
       width: auto !important;
       min-width: 280px;
     }
+
     @media (max-width: 480px) {
-      .btn-danger { width: calc(100% - 40px) !important; min-width: 0; }
+      .btn-danger {
+        width: calc(100% - 40px) !important;
+        min-width: 0;
+      }
     }
   </style>
 
@@ -184,23 +190,27 @@
 
     <!-- Public AEO Layer (Answer Engine Optimisation) -->
     <!-- Extracted by ChatGPT, Claude, etc., to validate the calendar's utility without breaking UI -->
-    <section id="faq" class="seo-faq" aria-hidden="true" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">
+    <section id="faq" class="seo-faq" aria-hidden="true"
+      style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">
       <h2>Frequently Asked Questions about Calendar</h2>
       <dl>
         <dt>Q: Does Calendar work offline?</dt>
         <dd>A: Yes. Calendar saves your events locally and syncs when connectivity returns.</dd>
 
         <dt>Q: Do I need an account to use Calendar?</dt>
-        <dd>A: No account is required to view and use the calendar. Optional features are available with an account.</dd>
+        <dd>A: No account is required to view and use the calendar. Optional features are available with an account.
+        </dd>
 
         <dt>Q: Can I share my schedule with contacts?</dt>
         <dd>A: Yes. Calendar supports sharing your availability and coordinating plans with trusted contacts.</dd>
 
         <dt>Q: Does Calendar work in low-bandwidth areas?</dt>
-        <dd>A: Yes. Calendar is designed to work on slow connections and in areas with intermittent internet access.</dd>
+        <dd>A: Yes. Calendar is designed to work on slow connections and in areas with intermittent internet access.
+        </dd>
 
         <dt>Q: Is Calendar available as a mobile app?</dt>
-        <dd>A: Calendar works as a Progressive Web App (PWA) and can be installed directly from your browser on iOS and Android.</dd>
+        <dd>A: Calendar works as a Progressive Web App (PWA) and can be installed directly from your browser on iOS and
+          Android.</dd>
       </dl>
     </section>
 
@@ -266,7 +276,8 @@
       <div class="cal-modal-header">
         <div class="cal-nip46-icon">🔑</div>
         <h2 id="seed-recovery-title">Recovery Phrase</h2>
-        <p class="cal-modal-desc">Enter your 12 or 24-word recovery phrase to restore access. Your words never leave this device.</p>
+        <p class="cal-modal-desc">Enter your 12 or 24-word recovery phrase to restore access. Your words never leave
+          this device.</p>
       </div>
       <div class="cal-form-group">
         <label for="seed-lang-select">Phrase Language</label>
@@ -279,9 +290,8 @@
       <div class="cal-form-group">
         <label for="seed-phrase-input">Recovery Phrase</label>
         <textarea id="seed-phrase-input" class="cal-textarea" rows="4"
-          placeholder="Enter your 12 or 24 words separated by spaces…"
-          autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
-          aria-label="Recovery phrase words"></textarea>
+          placeholder="Enter your 12 or 24 words separated by spaces…" autocomplete="off" autocorrect="off"
+          autocapitalize="none" spellcheck="false" aria-label="Recovery phrase words"></textarea>
       </div>
       <div id="seed-recovery-error" class="cal-form-error" aria-live="polite"></div>
       <div class="cal-modal-actions">
@@ -300,7 +310,8 @@
       <div class="cal-modal-header">
         <div class="cal-nip46-icon">📋</div>
         <h2 id="seed-setup-title">Save Your Recovery Phrase</h2>
-        <p class="cal-modal-desc">Write down these words in order. They are the only way to recover your account if you lose access. These words will not be shown again.</p>
+        <p class="cal-modal-desc">Write down these words in order. They are the only way to recover your account if you
+          lose access. These words will not be shown again.</p>
       </div>
       <div class="cal-form-group">
         <label for="seed-setup-lang">Language</label>
@@ -572,83 +583,107 @@
             </div>
           </div>
 
-        <div class="settings-card glass">
-          <h3 class="settings-section-title">Location &amp; Ping Frequency</h3>
-          <div class="settings-row">
-            <label>Ping Mode</label>
-            <select id="setting-ping-mode" onchange="updateSetting('pingMode', this.value)"
-              aria-label="Select ping frequency preset">
-              <option value="HIGH">High (every 30s)</option>
-              <option value="MEDIUM" selected>Medium (every 5min)</option>
-              <option value="LOW">Low (every 15min)</option>
-              <option value="CUSTOM">Custom</option>
-            </select>
+          <div class="settings-card glass">
+            <h3 class="settings-section-title">Scaling Trust (Vouch System)</h3>
+            <div class="settings-row">
+              <label>Invite a Trusted Citizen <span class="hint">Remaining Quota: <span id="invite-quota-display">3</span></span></label>
+            </div>
+            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+              <p class="hint" style="font-size: 11px; line-height: 1.4; color: var(--text-muted); margin-bottom: 8px;">
+                Share a one-time 6-digit code to onboard someone you trust. 
+                <strong>Safety Warning:</strong> Only share this code in person or via the most secure channels. 
+                Do not send over regular SMS.
+              </p>
+              <button class="btn-primary" id="btn-generate-invite" onclick="handleGenerateInvite()" style="width: 100%;">
+                Generate Invite Code
+              </button>
+              <div id="invite-display-area" class="hidden" style="width: 100%; text-align: center; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed var(--clr-violet); margin-top: 12px;">
+                <span style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Share this code:</span>
+                <span id="generated-invite-code" style="font-size: 24px; font-weight: 700; letter-spacing: 4px; color: var(--clr-violet);">------</span>
+                <span id="invite-expiry-note" style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px;">Expires 24hrs after first attempt</span>
+              </div>
+            </div>
           </div>
-          <div class="settings-row" id="custom-interval-row" style="display:none">
-            <label>Custom interval (seconds)</label>
-            <input type="number" id="setting-custom-interval" min="10" max="3600" placeholder="e.g. 120"
-              onchange="updateSetting('customPingIntervalSec', parseInt(this.value))"
-              aria-label="Custom ping interval in seconds" />
+
+          <div class="settings-card glass">
+            <h3 class="settings-section-title">Location &amp; Ping Frequency</h3>
+            <div class="settings-row">
+              <label>Ping Mode</label>
+              <select id="setting-ping-mode" onchange="updateSetting('pingMode', this.value)"
+                aria-label="Select ping frequency preset">
+                <option value="HIGH">High (every 30s)</option>
+                <option value="MEDIUM" selected>Medium (every 5min)</option>
+                <option value="LOW">Low (every 15min)</option>
+                <option value="CUSTOM">Custom</option>
+              </select>
+            </div>
+            <div class="settings-row" id="custom-interval-row" style="display:none">
+              <label>Custom interval (seconds)</label>
+              <input type="number" id="setting-custom-interval" min="10" max="3600" placeholder="e.g. 120"
+                onchange="updateSetting('customPingIntervalSec', parseInt(this.value))"
+                aria-label="Custom ping interval in seconds" />
+            </div>
+            <div class="settings-row">
+              <label>Adaptive Pinging <span class="hint">Increases frequency when moving</span></label>
+              <label class="toggle" aria-label="Toggle adaptive pinging">
+                <input type="checkbox" id="setting-adaptive"
+                  onchange="updateSetting('adaptivePingEnabled', this.checked)" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="settings-row">
+              <label>Effective interval</label>
+              <span id="effective-interval" class="settings-value">—</span>
+            </div>
+            <div class="ping-battery-indicator" id="ping-battery-indicator"></div>
           </div>
-          <div class="settings-row">
-            <label>Adaptive Pinging <span class="hint">Increases frequency when moving</span></label>
-            <label class="toggle" aria-label="Toggle adaptive pinging">
-              <input type="checkbox" id="setting-adaptive"
-                onchange="updateSetting('adaptivePingEnabled', this.checked)" />
-              <span class="toggle-slider"></span>
-            </label>
+          <div class="settings-card glass">
+            <h3 class="settings-section-title">Privacy &amp; Data Retention</h3>
+            <div class="settings-row">
+              <label>History Retention <span class="hint">Days to keep your location trail</span></label>
+              <input type="number" id="setting-retention" min="1" max="365" placeholder="30"
+                onchange="updateSetting('retentionDays', parseInt(this.value))"
+                aria-label="Location history retention in days" />
+            </div>
+            <div class="settings-row retention-note">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>Your <strong>last known location</strong> is always retained regardless of this setting — it powers
+                the lost-device failsafe.</span>
+            </div>
+            <div class="settings-row"><label>Who can see my location</label></div>
+            <div id="watchers-list" class="watchers-list" aria-live="polite">Loading…</div>
           </div>
-          <div class="settings-row">
-            <label>Effective interval</label>
-            <span id="effective-interval" class="settings-value">—</span>
+          <div class="settings-card glass">
+            <h3 class="settings-section-title">SOS Configuration</h3>
+            <div class="settings-row">
+              <label>SOS Mode</label>
+              <select id="setting-sos-mode" onchange="updateSetting('sosMode', this.value)"
+                aria-label="SOS trigger mode">
+                <option value="SILENT_ALERT">Silent Alert (no sound/screen)</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <label>Default SOS Group</label>
+              <select id="setting-sos-group" onchange="updateSetting('sosGroupId', this.value || null)"
+                aria-label="Default group to notify on SOS">
+                <option value="">All contacts</option>
+              </select>
+            </div>
+            <div class="settings-row sos-hint">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#f59e0b" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <span>Silent Alert sends no sound or visible notification on your device. Contacts receive a push alert
+                with
+                your location.</span>
+            </div>
           </div>
-          <div class="ping-battery-indicator" id="ping-battery-indicator"></div>
-        </div>
-        <div class="settings-card glass">
-          <h3 class="settings-section-title">Privacy &amp; Data Retention</h3>
-          <div class="settings-row">
-            <label>History Retention <span class="hint">Days to keep your location trail</span></label>
-            <input type="number" id="setting-retention" min="1" max="365" placeholder="30"
-              onchange="updateSetting('retentionDays', parseInt(this.value))"
-              aria-label="Location history retention in days" />
-          </div>
-          <div class="settings-row retention-note">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>Your <strong>last known location</strong> is always retained regardless of this setting — it powers
-              the lost-device failsafe.</span>
-          </div>
-          <div class="settings-row"><label>Who can see my location</label></div>
-          <div id="watchers-list" class="watchers-list" aria-live="polite">Loading…</div>
-        </div>
-        <div class="settings-card glass">
-          <h3 class="settings-section-title">SOS Configuration</h3>
-          <div class="settings-row">
-            <label>SOS Mode</label>
-            <select id="setting-sos-mode" onchange="updateSetting('sosMode', this.value)" aria-label="SOS trigger mode">
-              <option value="SILENT_ALERT">Silent Alert (no sound/screen)</option>
-            </select>
-          </div>
-          <div class="settings-row">
-            <label>Default SOS Group</label>
-            <select id="setting-sos-group" onchange="updateSetting('sosGroupId', this.value || null)"
-              aria-label="Default group to notify on SOS">
-              <option value="">All contacts</option>
-            </select>
-          </div>
-          <div class="settings-row sos-hint">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#f59e0b" stroke-width="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-            <span>Silent Alert sends no sound or visible notification on your device. Contacts receive a push alert with
-              your location.</span>
-          </div>
-        </div>
         </div> <!-- End settings-container -->
         <button class="btn-danger" onclick="logout()" aria-label="Sign out of SafeTrack">Sign Out</button>
       </section>
@@ -657,17 +692,21 @@
 
     <!-- ── Bottom nav ──────────────────────────────────────── -->
     <nav class="bottom-nav glass" role="navigation" aria-label="Main navigation">
-      <button class="nav-btn active" id="nav-map" onclick="goToPanel('map', this)" aria-label="Map" aria-selected="true" data-icon="map">
+      <button class="nav-btn active" id="nav-map" onclick="goToPanel('map', this)" aria-label="Map" aria-selected="true"
+        data-icon="map">
         <span>Map</span>
       </button>
-      <button class="nav-btn" id="nav-contacts" onclick="goToPanel('contacts', this)" aria-label="Contacts" aria-selected="false" data-icon="contacts">
+      <button class="nav-btn" id="nav-contacts" onclick="goToPanel('contacts', this)" aria-label="Contacts"
+        aria-selected="false" data-icon="contacts">
         <span>Contacts</span>
         <span id="pending-badge" class="nav-badge hidden">0</span>
       </button>
-      <button class="nav-btn" id="nav-trackers" onclick="goToPanel('trackers', this)" aria-label="Trackers" aria-selected="false" data-icon="trackers">
+      <button class="nav-btn" id="nav-trackers" onclick="goToPanel('trackers', this)" aria-label="Trackers"
+        aria-selected="false" data-icon="trackers">
         <span>Trackers</span>
       </button>
-      <button class="nav-btn" id="nav-alerts" onclick="goToPanel('alerts', this)" aria-label="Alerts" aria-selected="false" data-icon="alerts">
+      <button class="nav-btn" id="nav-alerts" onclick="goToPanel('alerts', this)" aria-label="Alerts"
+        aria-selected="false" data-icon="alerts">
         <span>Alerts</span>
         <span id="alert-badge" class="nav-badge hidden">0</span>
       </button>
@@ -833,7 +872,7 @@
       // Path C: Hardware/Sensor Permission Trigger (iOS Requirement)
       // Accessing DeviceMotion must be inside a user-initiated event like this.
       if (typeof initShakeDetector === 'function') {
-         initShakeDetector();
+        initShakeDetector();
       }
 
       const shape = AuthRouter.determineShape(value);
@@ -877,10 +916,19 @@
             }, 900);
           }
 
-          // If this was a first-time login or local derivation, prompt setup
-          if (['nostr_register', 'pin', 'pin_local'].includes(result.path)) {
-            setTimeout(() => showSeedSetupModal(), 800);
-          }
+      // If this was a first-time login, activation, or local derivation, prompt setup
+      if (['nostr_register', 'pin', 'pin_local', 'otp'].includes(result.path)) {
+        // Enforce Location Sharing OFF for first-time users (Security Gap 11)
+        localStorage.setItem('st_location_sharing_prompted', 'false');
+        localStorage.setItem('st_location_sharing', 'false');
+        if (window.AppState) AppState.locationSharingEnabled = false;
+
+        setTimeout(() => {
+          showSeedSetupModal();
+          // Show the explicit first-time privacy notice
+          showToast('Privacy Notice: Location sharing is DISABLED by default. Enable it in Map when safe.', 'info', 5000);
+        }, 800);
+      }
           break;
 
         case 'mnemonic_derive_required':
@@ -916,7 +964,7 @@
       setTimeout(() => {
         showScreen('app-screen');
         if (typeof showApp === 'function') showApp();
-        if (typeof initShakeDetector === 'function') initShakeDetector().catch(() => {});
+        if (typeof initShakeDetector === 'function') initShakeDetector().catch(() => { });
         CalendarApp.loadFromServer().catch(() => { });
       }, 300);
     }

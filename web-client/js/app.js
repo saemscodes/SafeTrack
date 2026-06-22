@@ -576,3 +576,52 @@ window.demoApiRequest = async function(path, options) {
   
   return {};
 };
+
+// ─── Vouch System: Scaling Trust ───────────────────────
+async function handleGenerateInvite() {
+  const btn = document.getElementById('btn-generate-invite');
+  const codeArea = document.getElementById('invite-display-area');
+  const codeEl = document.getElementById('generated-invite-code');
+  const quotaEl = document.getElementById('invite-quota-display');
+
+  // Check rate limit (6 hours)
+  const lastInviteAt = localStorage.getItem('st_last_invite_at');
+  if (lastInviteAt) {
+    const diff = (Date.now() - parseInt(lastInviteAt)) / (1000 * 60 * 60);
+    if (diff < 6) {
+      showToast('Rate limited: Please wait 6 hours between invites.', 'warn', 5000);
+      return;
+    }
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+
+  try {
+    // 1. Backend call (minting the OTP and recording the vouch ancestry)
+    const result = await API.post('/auth/create-invite', {
+      inviter_npub: AppState.user?.npub
+    });
+
+    if (result.code) {
+      codeEl.textContent = result.code;
+      codeArea.classList.remove('hidden');
+      
+      // Update local quota display
+      if (AppState.user) {
+        AppState.user.inviteQuota = (AppState.user.inviteQuota || 3) - 1;
+        quotaEl.textContent = AppState.user.inviteQuota;
+      }
+
+      localStorage.setItem('st_last_invite_at', Date.now().toString());
+      showToast('Invite generated successfully.', 'success');
+    } else if (result.error === 'quota_exceeded') {
+      showToast('No invites remaining in your quota.', 'warn');
+    }
+  } catch (err) {
+    showToast(`Failed: ${err.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate Invite Code';
+  }
+}

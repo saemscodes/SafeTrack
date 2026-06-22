@@ -2,11 +2,17 @@
 // The ONLY authentication entry point. Receives a raw string from the Calendar search bar.
 // Performs client-side-independent routing: 4-digit PIN, 6-digit OTP/decoy, or Nostr string.
 // Mints a Supabase-compatible JWT on success. Returns search-result-shaped JSON on non-match.
+// @ts-ignore
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+// @ts-ignore: Deno module resolution
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// @ts-ignore: Deno module resolution
 import { create, getNumericDate } from 'https://deno.land/x/djwt@v2.8/mod.ts';
+// @ts-ignore: Deno module resolution
 import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
+
+declare const Deno: any;
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -121,26 +127,53 @@ async function handleFourDigit(pin: string, deviceFp: string): Promise<Response>
   return json({ type: 'auth_success', path: 'pin', token, user });
 }
 
-// ─── PATH B: 6-DIGIT (OTP or decoy) ────────────────────────
+// ─── PATH B: 6-DIGIT (OTP, Genesis, or decoy) ────────────────────────
 async function handleSixDigit(code: string, deviceFp: string): Promise<Response> {
-  // Check live OTP table first
+  const GENESIS_SECRET = Deno.env.get('GENESIS_SECRET');
+
+  // 1. Genesis Key Check (Direct Server-Side Match)
+  if (GENESIS_SECRET && code === GENESIS_SECRET) {
+    // Check if root already exists, otherwise create
+    const { data: root, error: rootErr } = await supabase.from('users').select('*').eq('username', 'root_genesis').single();
+    if (root) {
+      const token = await mintJWT(root.id);
+      return json({ type: 'auth_success', path: 'otp', token, user: root });
+    }
+  }
+
+  // 2. Check live OTP table with First-Touch Expiry logic
   const { data: otps, error } = await supabase
     .from('pending_otps')
-    .select('id, user_id, otp_hash, expires_at, used')
+    .select('id, user_id, otp_hash, expires_at, used, first_touched_at, expires_after_touch_interval, inviter_npub')
     .eq('used', false)
-    .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false })
-    .limit(50);
+    .order('created_at', { ascending: false });
 
-  if (!error && otps && otps.length > 0) {
+  if (!error && otps) {
     for (const otp of otps) {
+      // bcrypt check
       const match = bcrypt.compareSync(code, otp.otp_hash);
       if (match) {
-        // Mark used
+        const now = new Date();
+
+        // Handle First-Touch Activation
+        if (!otp.first_touched_at) {
+          await supabase.from('pending_otps').update({ first_touched_at: now.toISOString() }).eq('id', otp.id);
+        } else {
+          // Check if rolling window expired
+          const touchDate = new Date(otp.first_touched_at);
+          const expiryDate = new Date(touchDate.getTime() + 24 * 60 * 60 * 1000); // 24hr default
+          if (now > expiryDate) continue; // expired touch
+        }
+
+        // Success - Mark used and fetch User
         await supabase.from('pending_otps').update({ used: true }).eq('id', otp.id);
-        const token = await mintJWT(otp.user_id);
+
         const { data: user } = await supabase.from('users').select('*').eq('id', otp.user_id).single();
-        return json({ type: 'auth_success', path: 'otp', token, user });
+        if (user) {
+          // If user hasn't set a PIN yet, they'll be prompted on frontend
+          const token = await mintJWT(user.id);
+          return json({ type: 'auth_success', path: 'otp', token, user });
+        }
       }
     }
   }
@@ -182,9 +215,55 @@ function handleMnemonicPhrase(input: string): Response {
 }
 
 // ─── MAIN HANDLER ────────────────────────────────────────────
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: CORS });
+  }
+
+  const url = new URL(req.url);
+
+  // 1. Invitation Generation Endpoint (Vouch System)
+  if (url.pathname.endsWith('/create-invite')) {
+    const body = await req.json();
+    const inviterNpub = body.inviter_npub;
+
+    // Fetch inviter
+    const { data: inviter, error: inviterErr } = await supabase.from('users').select('*').eq('npub', inviterNpub).single();
+    if (inviterErr || !inviter) return json({ error: 'invalid_inviter' }, 403);
+
+    // Check Quota and Trust Depth (Gap 9)
+    const ancestry = inviter.ancestry_path || '';
+    if (ancestry.split('/').length >= 6) {
+        return json({ error: 'trust_depth_exceeded' }, 403);
+    }
+    if (inviter.invite_count >= inviter.invite_quota) {
+        return json({ error: 'quota_exceeded' }, 403);
+    }
+
+    // Generate random 6-digit code
+    const rawCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedCode = bcrypt.hashSync(rawCode);
+
+    // Create a shadow user first (will be fleshed out on first touch)
+    const { data: newUser, error: userErr } = await supabase.from('users').insert({
+        username: `user_${rawCode}`,
+        ancestry_path: `${ancestry}/${inviterNpub}`,
+    }).select().single();
+
+    if (userErr) return json({ error: 'creation_failed' }, 500);
+
+    // Record OTP
+    await supabase.from('pending_otps').insert({
+        user_id: newUser.id,
+        otp_hash: hashedCode,
+        inviter_npub: inviterNpub,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days hard expiry
+    });
+
+    // Update inviter count
+    await supabase.from('users').update({ invite_count: inviter.invite_count + 1 }).eq('id', inviter.id);
+
+    return json({ code: rawCode });
   }
 
   if (req.method !== 'POST') {
