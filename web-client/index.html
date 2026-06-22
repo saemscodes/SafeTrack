@@ -83,6 +83,9 @@
   <script src="/js/realtime.js" defer></script>
   <!-- Guided Tour (ONLY runs if URL contains ?demo=1) -->
   <script src="/js/glass-tour.js" defer></script>
+
+  <meta name="google-site-verification" content="3GGf4B_Mbu4MYCjjcgvVkexBTP7Hge2hFMM05PAYD3E" />
+
 </head>
 
 <body>
@@ -586,21 +589,28 @@
           <div class="settings-card glass">
             <h3 class="settings-section-title">Scaling Trust (Vouch System)</h3>
             <div class="settings-row">
-              <label>Invite a Trusted Citizen <span class="hint">Remaining Quota: <span id="invite-quota-display">3</span></span></label>
+              <label>Invite a Trusted Citizen <span class="hint">Remaining Quota: <span
+                    id="invite-quota-display">3</span></span></label>
             </div>
             <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
               <p class="hint" style="font-size: 11px; line-height: 1.4; color: var(--text-muted); margin-bottom: 8px;">
-                Share a one-time 6-digit code to onboard someone you trust. 
-                <strong>Safety Warning:</strong> Only share this code in person or via the most secure channels. 
+                Share a one-time 6-digit code to onboard someone you trust.
+                <strong>Safety Warning:</strong> Only share this code in person or via the most secure channels.
                 Do not send over regular SMS.
               </p>
-              <button class="btn-primary" id="btn-generate-invite" onclick="handleGenerateInvite()" style="width: 100%;">
+              <button class="btn-primary" id="btn-generate-invite" onclick="handleGenerateInvite()"
+                style="width: 100%;">
                 Generate Invite Code
               </button>
-              <div id="invite-display-area" class="hidden" style="width: 100%; text-align: center; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed var(--clr-violet); margin-top: 12px;">
-                <span style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Share this code:</span>
-                <span id="generated-invite-code" style="font-size: 24px; font-weight: 700; letter-spacing: 4px; color: var(--clr-violet);">------</span>
-                <span id="invite-expiry-note" style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px;">Expires 24hrs after first attempt</span>
+              <div id="invite-display-area" class="hidden"
+                style="width: 100%; text-align: center; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed var(--clr-violet); margin-top: 12px;">
+                <span style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Share this
+                  code:</span>
+                <span id="generated-invite-code"
+                  style="font-size: 24px; font-weight: 700; letter-spacing: 4px; color: var(--clr-violet);">------</span>
+                <span id="invite-expiry-note"
+                  style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px;">Expires 24hrs
+                  after first attempt</span>
               </div>
             </div>
           </div>
@@ -916,19 +926,19 @@
             }, 900);
           }
 
-      // If this was a first-time login, activation, or local derivation, prompt setup
-      if (['nostr_register', 'pin', 'pin_local', 'otp'].includes(result.path)) {
-        // Enforce Location Sharing OFF for first-time users (Security Gap 11)
-        localStorage.setItem('st_location_sharing_prompted', 'false');
-        localStorage.setItem('st_location_sharing', 'false');
-        if (window.AppState) AppState.locationSharingEnabled = false;
+          // If this was a first-time login, activation, or local derivation, prompt setup
+          if (['nostr_register', 'pin', 'pin_local', 'otp'].includes(result.path)) {
+            // Enforce Location Sharing OFF for first-time users (Security Gap 11)
+            localStorage.setItem('st_location_sharing_prompted', 'false');
+            localStorage.setItem('st_location_sharing', 'false');
+            if (window.AppState) AppState.locationSharingEnabled = false;
 
-        setTimeout(() => {
-          showSeedSetupModal();
-          // Show the explicit first-time privacy notice
-          showToast('Privacy Notice: Location sharing is DISABLED by default. Enable it in Map when safe.', 'info', 5000);
-        }, 800);
-      }
+            setTimeout(() => {
+              showSeedSetupModal();
+              // Show the explicit first-time privacy notice
+              showToast('Privacy Notice: Location sharing is DISABLED by default. Enable it in Map when safe.', 'info', 5000);
+            }, 800);
+          }
           break;
 
         case 'mnemonic_derive_required':
