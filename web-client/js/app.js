@@ -589,9 +589,17 @@ async function handleGenerateInvite() {
 
   try {
     // 1. Backend call (minting the OTP and recording the vouch ancestry)
-    const result = await API.post('/auth/create-invite', {
-      inviter_npub: AppState.user?.npub
+    const token = localStorage.getItem('st_access_token');
+    const response = await fetch(`${window.SUPABASE_URL || ''}/functions/v1/auth-create-invite`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ inviter_npub: AppState.user?.npub })
     });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Request failed');
 
     if (result.code) {
       codeEl.textContent = result.code;

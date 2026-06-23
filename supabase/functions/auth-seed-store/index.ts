@@ -38,12 +38,15 @@ async function verifyJWT(token: string): Promise<string | null> {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    b64 = b64.padEnd(b64.length + (4 - (b64.length % 4)) % 4, '=');
+    const payload = JSON.parse(atob(b64));
     if (!payload.sub) return null;
     // Basic expiry check
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload.sub as string;
-  } catch {
+  } catch (err) {
+    console.error('JWT Decode Error:', err);
     return null;
   }
 }

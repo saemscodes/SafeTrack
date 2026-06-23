@@ -1434,6 +1434,33 @@
           }
         }, 400);
       }, 1600);
+      
+      // ── Generic Modal Controls (Dismiss on Outside Click & Swipe) ── //
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-overlay') || e.target.classList.contains('cal-modal-overlay')) {
+          e.target.classList.add('hidden');
+        }
+      });
+
+      let touchStartY = 0;
+      document.addEventListener('touchstart', (e) => {
+        if (e.target.closest('.modal-overlay') || e.target.closest('.cal-modal-overlay')) {
+          touchStartY = e.changedTouches[0].screenY;
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', (e) => {
+        if (touchStartY === 0) return;
+        const overlay = e.target.closest('.modal-overlay') || e.target.closest('.cal-modal-overlay');
+        if (overlay) {
+          const touchEndY = e.changedTouches[0].screenY;
+          if (touchEndY - touchStartY > 120) { // Substantial swipe down
+             overlay.classList.add('hidden');
+          }
+        }
+        touchStartY = 0;
+      }, { passive: true });
+
     });
   </script>
 
