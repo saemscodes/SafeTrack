@@ -25,17 +25,17 @@ function json(data: unknown, status = 200) {
   });
 }
 
+import { decode } from 'https://deno.land/x/djwt@v2.8/mod.ts';
+
 async function verifyJWT(token: string): Promise<string | null> {
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    b64 = b64.padEnd(b64.length + (4 - (b64.length % 4)) % 4, '=');
-    const payload = JSON.parse(atob(b64));
-    if (!payload.sub) return null;
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    const [header, payload, signature] = decode(token);
+    if (!payload || !payload.sub) return null;
+    const exp = payload.exp as number;
+    if (exp && exp < Math.floor(Date.now() / 1000)) return null;
     return payload.sub as string;
   } catch (err) {
+    console.error('JWT Decode Error:', err);
     return null;
   }
 }

@@ -190,7 +190,7 @@ function goToPanel(name, btn) {
   const panel = document.getElementById(`panel-${name}`);
   panel.classList.remove('hidden');
   panel.classList.add('active');
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   AppState.currentPanel = name;
 
   if (name === 'map') {
@@ -637,6 +637,13 @@ async function loadApplicationData() {
     
     // Distribute data to global state
     AppState.user = data.profile;
+
+    // ── THE BOOT GUARD: Permanent State Permanence ── //
+    if (!AppState.user || !AppState.user.npub) {
+      document.getElementById('modal-vouch-setup').classList.remove('hidden');
+      return; // Execution halts entirely. The dashboard refuses to hydrate.
+    }
+
     AppState.contacts = data.contacts;
     
     // Inject into specialized modules
