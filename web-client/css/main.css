@@ -1444,6 +1444,7 @@ body::before {
 }
 .modal-actions .btn-primary { flex: 1; }
 .modal-actions .btn-ghost { flex: 1; }
+.modal-actions .btn-danger { flex: 1; }
 
 .sos-modal { text-align: center; }
 .sos-modal-icon { font-size: 48px; margin-bottom: 12px; }
