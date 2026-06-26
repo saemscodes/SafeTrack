@@ -10,12 +10,13 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // @ts-ignore
 import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
+// @ts-ignore
+import { decode } from 'https://deno.land/x/djwt@v2.8/mod.ts';
 
 declare const Deno: any;
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const SUPABASE_JWT_SECRET = Deno.env.get('SAFE_TRACK_JWT_SECRET')!;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
@@ -32,17 +33,14 @@ function json(data: unknown, status = 200) {
   });
 }
 
-// Verify the incoming JWT by decoding claim manually (service_role bypass used
-// only for DB writes — user identity is confirmed from the token's sub claim).
-import { decode } from 'https://deno.land/x/djwt@v2.8/mod.ts';
-
+// Verify the incoming JWT using native djwt — no manual Base64 parsing.
 async function verifyJWT(token: string): Promise<string | null> {
   try {
-    const [header, payload, signature] = decode(token);
-    if (!payload || !payload.sub) return null;
-    const exp = payload.exp as number;
+    const [_header, payload, _signature] = decode(token);
+    if (!payload || !(payload as any).sub) return null;
+    const exp = (payload as any).exp as number;
     if (exp && exp < Math.floor(Date.now() / 1000)) return null;
-    return payload.sub as string;
+    return (payload as any).sub as string;
   } catch (err) {
     console.error('JWT Decode Error:', err);
     return null;
@@ -81,6 +79,7 @@ serve(async (req: Request) => {
 
   const { phrase_joined, language = 'en', word_count, entropy_fingerprint, username, display_name, npub, pin, device_fp } = body;
 
+  // ── Seed Phrase Vault ────────────────────────────────────
   if (phrase_joined) {
     const words = phrase_joined.trim().split(/\s+/).filter(Boolean);
     if (words.length !== 12 && words.length !== 24) {
@@ -105,28 +104,33 @@ serve(async (req: Request) => {
         },
         { onConflict: 'user_id' }
       );
-    if (seedErr) console.error('[auth-seed-store] DB error:', seedErr);
+    if (seedErr) console.error('[auth-seed-store] seed DB error:', seedErr);
   }
 
-  // Update user profile if provided (Phase C: Data Commit)
+  // ── User Profile Commit (Phase C) ────────────────────────
   if (npub || username || display_name) {
-    const updates: any = {};
+    const updates: Record<string, string> = {};
     if (npub) updates.npub = npub;
     if (username) updates.username = username;
     if (display_name) updates.display_name = display_name;
-    
-    await supabase.from('users').update(updates).eq('id', userId);
+
+    const { error: profileErr } = await supabase.from('users').update(updates).eq('id', userId);
+    if (profileErr) {
+      console.error('[auth-seed-store] profile update error:', profileErr);
+      return json({ error: 'Failed to update profile: ' + profileErr.message }, 500);
+    }
   }
 
-  // Register Device PIN binding if provided
+  // ── Device PIN Binding ───────────────────────────────────
   if (pin && device_fp) {
     const pinHash = bcrypt.hashSync(pin, 10);
-    await supabase.from('device_pins').upsert({
+    const { error: pinErr } = await supabase.from('device_pins').upsert({
       user_id: userId,
       device_fp: device_fp,
       pin_hash: pinHash,
       attempt_count: 0
     }, { onConflict: 'user_id, device_fp' });
+    if (pinErr) console.error('[auth-seed-store] pin upsert error:', pinErr);
   }
 
   return json({ ok: true });

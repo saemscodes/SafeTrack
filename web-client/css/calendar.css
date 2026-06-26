@@ -397,12 +397,13 @@
   gap: 3px;
 }
 
-.cal-day-cell:hover {
+.cal-day-cell:hover .cal-day-num {
+  /* Hover only highlights the number circle — tight and conservative */
   background: var(--cal-surface);
 }
 
 .cal-day-cell:active {
-  transform: scale(0.92);
+  transform: scale(0.95);
 }
 
 .cal-day-cell.cal-day-empty {
@@ -418,6 +419,7 @@
   font-family: 'Inter', -apple-system, sans-serif;
   font-size: 17px;
   font-weight: 400;
+  line-height: 1;
   color: var(--cal-label);
   width: 34px;
   height: 34px;

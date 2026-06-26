@@ -144,7 +144,7 @@ async function handleSixDigit(code: string, deviceFp: string): Promise<Response>
   // 2. Check live OTP table with First-Touch Expiry logic
   const { data: otps, error } = await supabase
     .from('pending_otps')
-    .select('id, user_id, otp_hash, expires_at, used, first_touched_at, expires_after_touch_interval, inviter_npub')
+    .select('id, user_id, otp_hash, expires_at, used, first_touched_at')
     .eq('used', false)
     .order('created_at', { ascending: false });
 
@@ -252,12 +252,11 @@ serve(async (req: Request) => {
 
     if (userErr) return json({ error: 'creation_failed' }, 500);
 
-    // Record OTP
     await supabase.from('pending_otps').insert({
         user_id: newUser.id,
         otp_hash: hashedCode,
-        inviter_npub: inviterNpub,
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days hard expiry
+        inviter_id: inviter.id,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     });
 
     // Update inviter count

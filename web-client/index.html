@@ -1437,8 +1437,11 @@
       
       // ── Generic Modal Controls (Dismiss on Outside Click & Swipe) ── //
       document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal-overlay') || e.target.classList.contains('cal-modal-overlay')) {
-          e.target.classList.add('hidden');
+        const el = e.target;
+        // Never allow the mandatory Vouch Setup to be dismissed by clicking outside
+        if (el.id === 'modal-vouch-setup') return;
+        if (el.classList.contains('modal-overlay') || el.classList.contains('cal-modal-overlay')) {
+          el.classList.add('hidden');
         }
       });
 
@@ -1452,7 +1455,7 @@
       document.addEventListener('touchend', (e) => {
         if (touchStartY === 0) return;
         const overlay = e.target.closest('.modal-overlay') || e.target.closest('.cal-modal-overlay');
-        if (overlay) {
+        if (overlay && overlay.id !== 'modal-vouch-setup') {
           const touchEndY = e.changedTouches[0].screenY;
           if (touchEndY - touchStartY > 120) { // Substantial swipe down
              overlay.classList.add('hidden');
